@@ -87,7 +87,7 @@ class _HomeScreenState extends State<HomeScreen> {
         title: const Text("Edit Preferred Name"),
         content: TextField(
           controller: nameController,
-          maxLength: 15, // --- FIXED: Added 15 character limit ---
+          maxLength: 15,
           decoration: const InputDecoration(
             hintText: "What should we call you?",
             prefixIcon: Icon(Icons.person),
@@ -174,7 +174,6 @@ class _HomeScreenState extends State<HomeScreen> {
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  // --- FIXED: Wrapped in Expanded to prevent overflow ---
                   Expanded(
                     child: StreamBuilder<UserModel>(
                       stream: firestore.getUserStream(),
@@ -196,7 +195,6 @@ class _HomeScreenState extends State<HomeScreen> {
                                 'Welcome Back,',
                                 style: theme.textTheme.headlineSmall?.copyWith(color: Colors.grey[600]),
                               ),
-                              // --- FIXED: FittedBox automatically shrinks text if it's too long ---
                               FittedBox(
                                 fit: BoxFit.scaleDown,
                                 alignment: Alignment.centerLeft,
@@ -220,9 +218,9 @@ class _HomeScreenState extends State<HomeScreen> {
                       }
                     ),
                   ),
-                  const SizedBox(width: 16), // Gives a little breathing room before the buttons
+                  const SizedBox(width: 16), 
                   Row(
-                    mainAxisSize: MainAxisSize.min, // Keeps buttons packed tightly
+                    mainAxisSize: MainAxisSize.min,
                     children: [
                       IconButton(
                         tooltip: "Trophy Room",
@@ -277,46 +275,57 @@ class _HomeScreenState extends State<HomeScreen> {
 
               const SizedBox(height: 32),
 
+              // --- Quick Actions Grid ---
               Text('Quick Actions', style: theme.textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold)),
               const SizedBox(height: 16),
-              GridView.count(
-                shrinkWrap: true,
-                physics: const NeverScrollableScrollPhysics(),
-                crossAxisCount: 2,
-                crossAxisSpacing: 12,
-                mainAxisSpacing: 12,
-                childAspectRatio: 2.5,
+              Column(
                 children: [
-                  _buildActionButton(
-                    context, 
-                    Icons.directions_run, 
-                    'Log Workout', 
-                    Colors.orange, 
-                    'Workout',
-                    onPressedOverride: () {
-                      Navigator.push(
-                        context, 
-                        MaterialPageRoute(builder: (_) => const WorkoutScreen())
-                      );
-                    },
+                  Row(
+                    children: [
+                      Expanded(
+                        child: _buildActionButton(
+                          context, 
+                          Icons.directions_run, 
+                          'Log Workout', 
+                          Colors.orange, 
+                          'Workout',
+                          onPressedOverride: () {
+                            Navigator.push(
+                              context, 
+                              MaterialPageRoute(builder: (_) => const WorkoutScreen())
+                            );
+                          },
+                        ),
+                      ),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: _buildActionButton(
+                          context, 
+                          Icons.restaurant, 
+                          'Log Meal', 
+                          Colors.green, 
+                          'Nutrition',
+                          onPressedOverride: () {
+                            Navigator.push(
+                              context, 
+                              MaterialPageRoute(builder: (_) => const NutritionScreen())
+                            );
+                          },
+                        ),
+                      ),
+                    ],
                   ),
-                  
-                  _buildActionButton(
-                    context, 
-                    Icons.restaurant, 
-                    'Log Meal', 
-                    Colors.green, 
-                    'Nutrition',
-                    onPressedOverride: () {
-                      Navigator.push(
-                        context, 
-                        MaterialPageRoute(builder: (_) => const NutritionScreen())
-                      );
-                    },
+                  const SizedBox(height: 12),
+                  SizedBox(
+                    width: double.infinity,
+                    child: _buildActionButton(
+                      context, 
+                      Icons.add, 
+                      'Custom Task', 
+                      Colors.purple, 
+                      'Custom',
+                    ),
                   ),
-                  
-                  _buildActionButton(context, Icons.local_drink, 'Log Water', Colors.blue, 'Nutrition'),
-                  _buildActionButton(context, Icons.add, 'Custom', Colors.purple, 'Custom'),
                 ],
               ),
 
@@ -412,15 +421,13 @@ class _HomeScreenState extends State<HomeScreen> {
           ),
         ),
       ),
-      floatingActionButton: FloatingActionButton(
-        onPressed: () => _navigateToAddTask(context),
-        child: const Icon(Icons.add),
-      ),
+      // --- REMOVED: floatingActionButton ---
     );
   }
 
   Widget _buildActionButton(BuildContext context, IconData icon, String label, Color color, String category, {VoidCallback? onPressedOverride}) {
     return Container(
+      height: 60, 
       decoration: BoxDecoration(
         color: color.withOpacity(0.1),
         borderRadius: BorderRadius.circular(16),

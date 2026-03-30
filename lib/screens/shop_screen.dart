@@ -41,6 +41,14 @@ class _ShopScreenState extends State<ShopScreen> {
     );
   }
 
+  // --- NEW: Theme Equip Helper ---
+  void _equipTheme(String rewardId) {
+    _firestore.equipTheme(rewardId);
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(content: Text('Theme Applied!'), duration: Duration(milliseconds: 500)),
+    );
+  }
+
   void _deleteCustomReward(String id) {
     _firestore.deleteCustomReward(id);
   }
@@ -142,6 +150,7 @@ class _ShopScreenState extends State<ShopScreen> {
   }
 
   Widget _buildMyRewardsTab(UserModel user) {
+    // ... (This remains completely unchanged) ...
     return Scaffold(
       floatingActionButton: FloatingActionButton.extended(
         onPressed: () => _showAddRewardDialog(context),
@@ -206,26 +215,34 @@ class _ShopScreenState extends State<ShopScreen> {
         final isUnlocked = user.unlockedRewardIds.contains(reward.id);
         final isLevelLocked = user.currentLevel < reward.requiredLevel;
         final canAfford = user.currentCoins >= reward.cost;
-        final isEquipped = user.selectedAvatarId == reward.id;
-
-        // --- Logic to handle Avatars (Equip) vs Themes vs Locked ---
-        // For Phase 3, we treat 'avatar_' IDs as equippable.
+        
+        // --- NEW: Specific checks for Avatar vs Theme ---
+        final isAvatarEquipped = user.selectedAvatarId == reward.id;
+        final isThemeEquipped = user.selectedThemeId == reward.id;
         bool isAvatar = reward.id.startsWith('avatar_');
+        bool isTheme = reward.id.startsWith('theme_');
 
         String buttonText;
         VoidCallback? onPressed;
         
         if (isUnlocked) {
           if (isAvatar) {
-            if (isEquipped) {
+            if (isAvatarEquipped) {
               buttonText = 'Equipped';
               onPressed = null;
             } else {
               buttonText = 'Equip';
               onPressed = () => _equipItem(reward.id);
             }
+          } else if (isTheme) {
+            if (isThemeEquipped) {
+              buttonText = 'Equipped';
+              onPressed = null;
+            } else {
+              buttonText = 'Equip';
+              onPressed = () => _equipTheme(reward.id);
+            }
           } else {
-            // It's a theme or other non-avatar item
             buttonText = 'Owned';
             onPressed = null; 
           }

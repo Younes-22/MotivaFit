@@ -7,7 +7,6 @@ import '../services/firestore_service.dart';
 import '../services/food_service.dart';
 import 'ai_chat_screen.dart';
 
-
 class NutritionScreen extends StatefulWidget {
   const NutritionScreen({super.key});
 
@@ -19,15 +18,15 @@ class _NutritionScreenState extends State<NutritionScreen> {
   final FoodService _foodService = FoodService();
   bool _isSearching = false;
 
-  // --- ACTIONS ---
-
+  // ===========================================================================
+  // 1. BARCODE SCANNING
+  // ===========================================================================
   Future<void> _scanBarcode(BuildContext context) async {
     final result = await Navigator.push(
       context,
       MaterialPageRoute(
         builder: (context) {
           bool isScanned = false; 
-          
           return Scaffold(
             appBar: AppBar(title: const Text('Scan Barcode')),
             body: MobileScanner(
@@ -48,7 +47,6 @@ class _NutritionScreenState extends State<NutritionScreen> {
               },
               onDetect: (capture) {
                 if (isScanned) return; 
-                
                 final List<Barcode> barcodes = capture.barcodes;
                 if (barcodes.isNotEmpty) {
                   final String? code = barcodes.first.rawValue;
@@ -66,58 +64,56 @@ class _NutritionScreenState extends State<NutritionScreen> {
 
     if (result != null && result is String) {
       setState(() => _isSearching = true);
-      
       try {
         final food = await _foodService.getFoodByBarcode(result);
-        
         if (mounted && food != null) {
           _showLogFoodDialog(context, initialFood: food);
         } else if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-              content: Text('Product not found in database.'),
-              backgroundColor: Colors.red,
-            ),
+            const SnackBar(content: Text('Product not found. Try Manual Entry!'), backgroundColor: Colors.orange),
           );
         }
       } catch (e) {
-        if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Error: $e')));
-        }
+        if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Error: $e')));
       } finally {
         if (mounted) setState(() => _isSearching = false);
       }
     }
   }
 
+  // ===========================================================================
+  // 2. SEARCH LOGIC
+  // ===========================================================================
   void _showSearchDialog(BuildContext context) {
     final searchController = TextEditingController();
-    
     showDialog(
       context: context,
       builder: (ctx) => AlertDialog(
-        title: const Text('Search Food'),
+        title: const Text('Log a Meal'),
         content: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
             TextField(
               controller: searchController,
               decoration: const InputDecoration(
-                labelText: 'Food Name (e.g. Banana)',
+                labelText: 'Search Food Name',
                 suffixIcon: Icon(Icons.search),
               ),
-              onSubmitted: (val) async {
+              onSubmitted: (val) {
                 Navigator.pop(ctx); 
                 _performSearch(context, val);
               },
             ),
-            const SizedBox(height: 16),
-            ElevatedButton.icon(
-              icon: const Icon(Icons.qr_code_scanner),
-              label: const Text('Scan Barcode instead'),
+            const SizedBox(height: 20),
+            const Text("OR", style: TextStyle(color: Colors.grey, fontSize: 12)),
+            const SizedBox(height: 12),
+            // --- UPDATED: Added Manual Entry trigger here ---
+            OutlinedButton.icon(
+              icon: const Icon(Icons.edit_note),
+              label: const Text('Enter Manually'),
               onPressed: () {
                 Navigator.pop(ctx);
-                _scanBarcode(context);
+                _showManualEntryDialog();
               },
             ),
           ],
@@ -138,15 +134,13 @@ class _NutritionScreenState extends State<NutritionScreen> {
 
   void _performSearch(BuildContext context, String query) async {
     if (query.isEmpty) return;
-    
     setState(() => _isSearching = true);
     final results = await _foodService.searchFood(query);
     setState(() => _isSearching = false);
 
     if (!mounted) return;
-
     if (results.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('No results found.')));
+      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('No results. Try Manual Entry!')));
       return;
     }
 
@@ -176,6 +170,78 @@ class _NutritionScreenState extends State<NutritionScreen> {
     );
   }
 
+  // ===========================================================================
+  // 3. LOGGING DIALOGS (Manual & Automatic)
+  // ===========================================================================
+  void _showManualEntryDialog() {
+    final nameController = TextEditingController();
+    final calController = TextEditingController();
+    final proController = TextEditingController();
+    final carbController = TextEditingController();
+    final fatController = TextEditingController();
+
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(20))),
+      builder: (ctx) => Padding(
+        padding: EdgeInsets.only(
+          bottom: MediaQuery.of(ctx).viewInsets.bottom,
+          left: 24, right: 24, top: 24
+        ),
+        child: SingleChildScrollView(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Text("Manual Meal Entry", style: Theme.of(context).textTheme.titleLarge),
+              const SizedBox(height: 16),
+              TextField(controller: nameController, decoration: const InputDecoration(labelText: "Meal Name")),
+              const SizedBox(height: 8),
+              Row(
+                children: [
+                  Expanded(child: TextField(controller: calController, decoration: const InputDecoration(labelText: "Calories"), keyboardType: TextInputType.number)),
+                  const SizedBox(width: 12),
+                  Expanded(child: TextField(controller: proController, decoration: const InputDecoration(labelText: "Protein (g)"), keyboardType: TextInputType.number)),
+                ],
+              ),
+              const SizedBox(height: 8),
+              Row(
+                children: [
+                  Expanded(child: TextField(controller: carbController, decoration: const InputDecoration(labelText: "Carbs (g)"), keyboardType: TextInputType.number)),
+                  const SizedBox(width: 12),
+                  Expanded(child: TextField(controller: fatController, decoration: const InputDecoration(labelText: "Fat (g)"), keyboardType: TextInputType.number)),
+                ],
+              ),
+              const SizedBox(height: 24),
+              SizedBox(
+                width: double.infinity,
+                child: FilledButton(
+                  onPressed: () async {
+                    if (calController.text.isEmpty || nameController.text.isEmpty) return;
+                    
+                    bool leveledUp = await FirestoreService().logFood(
+                      calories: int.tryParse(calController.text) ?? 0,
+                      protein: int.tryParse(proController.text) ?? 0,
+                      carbs: int.tryParse(carbController.text) ?? 0,
+                      fat: int.tryParse(fatController.text) ?? 0,
+                      date: DateTime.now(),
+                    );
+                    
+                    if (!mounted) return;
+                    Navigator.pop(ctx);
+                    _handleLoggingOutcome(leveledUp);
+                  }, 
+                  child: const Text("Log Manual Meal")
+                ),
+              ),
+              const SizedBox(height: 30),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
   void _showLogFoodDialog(BuildContext context, {FoodItem? initialFood}) {
     final servingController = TextEditingController(text: '100');
     final calController = TextEditingController(text: initialFood?.calories.toString() ?? '');
@@ -187,7 +253,6 @@ class _NutritionScreenState extends State<NutritionScreen> {
       if (initialFood == null) return;
       final amount = double.tryParse(servingController.text) ?? 0.0;
       final multiplier = amount / 100.0;
-      
       calController.text = (initialFood.calories * multiplier).round().toString();
       protController.text = (initialFood.protein * multiplier).round().toString();
       carbController.text = (initialFood.carbs * multiplier).round().toString();
@@ -197,49 +262,22 @@ class _NutritionScreenState extends State<NutritionScreen> {
     showDialog(
       context: context,
       builder: (ctx) => AlertDialog(
-        title: Text(initialFood != null ? 'Log: ${initialFood.name}' : 'Log Custom Meal'),
+        title: Text('Log: ${initialFood?.name ?? "Meal"}'),
         content: SingleChildScrollView(
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              if (initialFood != null) ...[
-                TextField(
-                  controller: servingController,
-                  keyboardType: TextInputType.number,
-                  decoration: const InputDecoration(
-                    labelText: 'Amount Consumed',
-                    suffixText: 'g / ml',
-                  ),
-                  onChanged: (val) => recalculateMacros(), 
-                ),
-                const SizedBox(height: 16),
-                const Divider(),
-                const Padding(
-                  padding: EdgeInsets.only(bottom: 8.0, top: 4.0),
-                  child: Text('Calculated Nutritional Values:', style: TextStyle(fontSize: 12, color: Colors.grey, fontWeight: FontWeight.bold)),
-                ),
-              ],
               TextField(
-                controller: calController,
+                controller: servingController,
                 keyboardType: TextInputType.number,
-                decoration: const InputDecoration(labelText: 'Calories (kcal)'),
+                decoration: const InputDecoration(labelText: 'Amount (g/ml)', suffixText: 'g'),
+                onChanged: (_) => recalculateMacros(), 
               ),
-              const SizedBox(height: 8),
-              TextField(
-                controller: protController,
-                keyboardType: TextInputType.number,
-                decoration: const InputDecoration(labelText: 'Protein (g)'),
-              ),
-              TextField(
-                controller: carbController,
-                keyboardType: TextInputType.number,
-                decoration: const InputDecoration(labelText: 'Carbs (g)'),
-              ),
-              TextField(
-                controller: fatController,
-                keyboardType: TextInputType.number,
-                decoration: const InputDecoration(labelText: 'Fat (g)'),
-              ),
+              const Divider(height: 32),
+              TextField(controller: calController, decoration: const InputDecoration(labelText: 'Calories (kcal)'), keyboardType: TextInputType.number),
+              TextField(controller: protController, decoration: const InputDecoration(labelText: 'Protein (g)'), keyboardType: TextInputType.number),
+              TextField(controller: carbController, decoration: const InputDecoration(labelText: 'Carbs (g)'), keyboardType: TextInputType.number),
+              TextField(controller: fatController, decoration: const InputDecoration(labelText: 'Fat (g)'), keyboardType: TextInputType.number),
             ],
           ),
         ),
@@ -247,39 +285,16 @@ class _NutritionScreenState extends State<NutritionScreen> {
           TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('Cancel')),
           FilledButton(
             onPressed: () async {
-              final cals = int.tryParse(calController.text) ?? 0;
-              final p = int.tryParse(protController.text) ?? 0;
-              final c = int.tryParse(carbController.text) ?? 0;
-              final f = int.tryParse(fatController.text) ?? 0;
-
-              if (cals > 0) {
-                bool leveledUp = await FirestoreService().logFood(
-                  calories: cals, protein: p, carbs: c, fat: f, 
-                  date: DateTime.now()
-                );
-                
-                if (!context.mounted) return;
-                Navigator.pop(ctx); 
-
-                if (leveledUp) {
-                  showDialog(
-                    context: context,
-                    builder: (context) => AlertDialog(
-                      icon: const Icon(Icons.emoji_events, size: 48, color: Colors.amber),
-                      title: const Text('🎉 LEVEL UP! 🎉'),
-                      content: const Text('You logged a meal and reached the next level!'),
-                      actions: [TextButton(onPressed: () => Navigator.pop(context), child: const Text('OK'))],
-                    ),
-                  );
-                } else {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(
-                      content: Text('Meal Logged! (+10 XP, +2 Coins)'),
-                      backgroundColor: Colors.green,
-                    )
-                  );
-                }
-              }
+              bool leveledUp = await FirestoreService().logFood(
+                calories: int.tryParse(calController.text) ?? 0,
+                protein: int.tryParse(protController.text) ?? 0,
+                carbs: int.tryParse(carbController.text) ?? 0,
+                fat: int.tryParse(fatController.text) ?? 0,
+                date: DateTime.now()
+              );
+              if (!mounted) return;
+              Navigator.pop(ctx); 
+              _handleLoggingOutcome(leveledUp);
             },
             child: const Text('Log'),
           ),
@@ -288,6 +303,28 @@ class _NutritionScreenState extends State<NutritionScreen> {
     );
   }
 
+  // Helper to handle the Level Up / SnackBar logic for both manual & automatic logs
+  void _handleLoggingOutcome(bool leveledUp) {
+    if (leveledUp) {
+      showDialog(
+        context: context,
+        builder: (context) => AlertDialog(
+          icon: const Icon(Icons.emoji_events, size: 48, color: Colors.amber),
+          title: const Text('🎉 LEVEL UP! 🎉'),
+          content: const Text('You logged a meal and reached the next level!'),
+          actions: [TextButton(onPressed: () => Navigator.pop(context), child: const Text('OK'))],
+        ),
+      );
+    } else {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Meal Logged! (+10 XP, +2 Coins)'), backgroundColor: Colors.green)
+      );
+    }
+  }
+
+  // ===========================================================================
+  // 4. UI BUILD
+  // ===========================================================================
   void _showEditGoalsDialog(BuildContext context, UserModel user) {
     final calController = TextEditingController(text: user.calorieGoal.toString());
     final protController = TextEditingController(text: user.proteinGoal.toString());
@@ -298,16 +335,14 @@ class _NutritionScreenState extends State<NutritionScreen> {
       context: context,
       builder: (ctx) => AlertDialog(
         title: const Text('Set Goals'),
-        content: SingleChildScrollView(
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              TextField(controller: calController, decoration: const InputDecoration(labelText: 'Daily Calories')),
-              TextField(controller: protController, decoration: const InputDecoration(labelText: 'Protein Goal (g)')),
-              TextField(controller: carbController, decoration: const InputDecoration(labelText: 'Carbs Goal (g)')),
-              TextField(controller: fatController, decoration: const InputDecoration(labelText: 'Fat Goal (g)')),
-            ],
-          ),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            TextField(controller: calController, decoration: const InputDecoration(labelText: 'Daily Calories'), keyboardType: TextInputType.number),
+            TextField(controller: protController, decoration: const InputDecoration(labelText: 'Protein Goal (g)'), keyboardType: TextInputType.number),
+            TextField(controller: carbController, decoration: const InputDecoration(labelText: 'Carbs Goal (g)'), keyboardType: TextInputType.number),
+            TextField(controller: fatController, decoration: const InputDecoration(labelText: 'Fat Goal (g)'), keyboardType: TextInputType.number),
+          ],
         ),
         actions: [
           TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('Cancel')),
@@ -337,14 +372,10 @@ class _NutritionScreenState extends State<NutritionScreen> {
       appBar: AppBar(
         title: const Text('Nutrition Tracker'),
         actions: [
-          // --- NEW: ASK AI BUTTON ---
           IconButton(
             icon: const Icon(Icons.psychology, color: Colors.deepPurple),
             tooltip: "Ask AI Nutritionist",
-            onPressed: () => Navigator.push(
-              context, 
-              MaterialPageRoute(builder: (_) => const AIChatScreen())
-            ),
+            onPressed: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const AIChatScreen())),
           ),
           StreamBuilder<UserModel>(
             stream: firestore.getUserStream(),
@@ -353,7 +384,6 @@ class _NutritionScreenState extends State<NutritionScreen> {
               return IconButton(
                 icon: const Icon(Icons.edit),
                 onPressed: () => _showEditGoalsDialog(context, snapshot.data!),
-                tooltip: "Edit Goals",
               );
             },
           )
@@ -375,9 +405,7 @@ class _NutritionScreenState extends State<NutritionScreen> {
                 Text("Weekly History", style: theme.textTheme.titleMedium),
                 const SizedBox(height: 12),
                 _buildWeeklyGraph(firestore, user.calorieGoal, theme),
-
                 const SizedBox(height: 32),
-
                 Text("Today's Summary", style: theme.textTheme.titleMedium),
                 const SizedBox(height: 12),
                 _buildTodaySummary(firestore, user, theme),
@@ -389,7 +417,7 @@ class _NutritionScreenState extends State<NutritionScreen> {
       floatingActionButton: Column(
         mainAxisAlignment: MainAxisAlignment.end,
         children: [
-           FloatingActionButton.small(
+          FloatingActionButton.small(
             heroTag: "scanBtn",
             onPressed: () => _scanBarcode(context),
             child: const Icon(Icons.qr_code_scanner),
@@ -406,6 +434,7 @@ class _NutritionScreenState extends State<NutritionScreen> {
     );
   }
 
+  // Graph and Summary Widgets remain the same...
   Widget _buildWeeklyGraph(FirestoreService firestore, int goal, ThemeData theme) {
     return Container(
       height: 200,
@@ -418,59 +447,25 @@ class _NutritionScreenState extends State<NutritionScreen> {
         stream: firestore.getWeeklyNutrition(),
         builder: (context, snapshot) {
           if (!snapshot.hasData) return const Center(child: CircularProgressIndicator());
-          
           final days = snapshot.data!;
           final now = DateTime.now();
           final List<Widget> bars = [];
-
           for (int i = 6; i >= 0; i--) {
             final date = now.subtract(Duration(days: i));
             final dateId = "${date.year}-${date.month.toString().padLeft(2, '0')}-${date.day.toString().padLeft(2, '0')}";
-            
-            final dayData = days.firstWhere((d) => d.id == dateId, 
-                orElse: () => NutritionDay(id: dateId, calories: 0, protein: 0, carbs: 0, fat: 0, date: date));
-
+            final dayData = days.firstWhere((d) => d.id == dateId, orElse: () => NutritionDay(id: dateId, calories: 0, protein: 0, carbs: 0, fat: 0, date: date));
             double percent = goal == 0 ? 0 : (dayData.calories / goal).clamp(0.0, 1.0);
             bool isToday = i == 0;
-
-            bars.add(
-              Column(
-                children: [
-                  Expanded(
-                    child: Stack(
-                      alignment: Alignment.bottomCenter,
-                      children: [
-                        Container(width: 12, color: Colors.grey.withOpacity(0.2)), 
-                        FractionallySizedBox(
-                          heightFactor: percent,
-                          child: Container(
-                            width: 12,
-                            decoration: BoxDecoration(
-                              color: isToday ? theme.colorScheme.primary : Colors.grey,
-                              borderRadius: BorderRadius.circular(4),
-                            ),
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                  const SizedBox(height: 8),
-                  Text(
-                    DateFormat.E().format(date)[0], 
-                    style: TextStyle(
-                      fontWeight: isToday ? FontWeight.bold : FontWeight.normal,
-                      color: isToday ? theme.colorScheme.primary : Colors.grey,
-                    ),
-                  ),
-                ],
-              ),
-            );
+            bars.add(Expanded(child: Column(children: [
+              Expanded(child: Stack(alignment: Alignment.bottomCenter, children: [
+                Container(width: 12, color: Colors.grey.withOpacity(0.2)),
+                FractionallySizedBox(heightFactor: percent, child: Container(width: 12, decoration: BoxDecoration(color: isToday ? theme.colorScheme.primary : Colors.grey, borderRadius: BorderRadius.circular(4)))),
+              ])),
+              const SizedBox(height: 8),
+              Text(DateFormat.E().format(date)[0], style: TextStyle(fontWeight: isToday ? FontWeight.bold : FontWeight.normal, color: isToday ? theme.colorScheme.primary : Colors.grey)),
+            ])));
           }
-
-          return Row(
-            mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-            children: bars,
-          );
+          return Row(mainAxisAlignment: MainAxisAlignment.spaceEvenly, children: bars);
         },
       ),
     );
@@ -481,92 +476,35 @@ class _NutritionScreenState extends State<NutritionScreen> {
       stream: firestore.getNutritionForDate(DateTime.now()),
       builder: (context, snapshot) {
         final data = snapshot.data ?? NutritionDay(id: '', calories: 0, protein: 0, carbs: 0, fat: 0, date: DateTime.now());
-        
-        return Column(
-          children: [
-            Card(
-              child: Padding(
-                padding: const EdgeInsets.all(16.0),
-                child: Column(
-                  children: [
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        const Text("Calories", style: TextStyle(fontWeight: FontWeight.bold)),
-                        Text("${data.calories} / ${user.calorieGoal} kcal"),
-                      ],
-                    ),
-                    const SizedBox(height: 8),
-                    LinearProgressIndicator(
-                      value: user.calorieGoal == 0 ? 0 : (data.calories / user.calorieGoal).clamp(0.0, 1.0),
-                      minHeight: 12,
-                      borderRadius: BorderRadius.circular(6),
-                      backgroundColor: Colors.grey.shade200,
-                      color: data.calories > user.calorieGoal ? Colors.red : Colors.green,
-                    ),
-                  ],
-                ),
-              ),
-            ),
-            const SizedBox(height: 12),
-            Row(
-              children: [
-                _buildMacroCard("Protein", data.protein, user.proteinGoal, Colors.blue),
-                const SizedBox(width: 8),
-                _buildMacroCard("Carbs", data.carbs, user.carbsGoal, Colors.orange),
-                const SizedBox(width: 8),
-                _buildMacroCard("Fat", data.fat, user.fatGoal, Colors.purple),
-              ],
-            ),
-          ],
-        );
+        return Column(children: [
+          Card(child: Padding(padding: const EdgeInsets.all(16.0), child: Column(children: [
+            Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [const Text("Calories", style: TextStyle(fontWeight: FontWeight.bold)), Text("${data.calories} / ${user.calorieGoal} kcal")]),
+            const SizedBox(height: 8),
+            LinearProgressIndicator(value: user.calorieGoal == 0 ? 0 : (data.calories / user.calorieGoal).clamp(0.0, 1.0), minHeight: 12, borderRadius: BorderRadius.circular(6), backgroundColor: Colors.grey.shade200, color: data.calories > user.calorieGoal ? Colors.red : Colors.green),
+          ]))),
+          const SizedBox(height: 12),
+          Row(children: [
+            _buildMacroCard("Protein", data.protein, user.proteinGoal, Colors.blue),
+            const SizedBox(width: 8),
+            _buildMacroCard("Carbs", data.carbs, user.carbsGoal, Colors.orange),
+            const SizedBox(width: 8),
+            _buildMacroCard("Fat", data.fat, user.fatGoal, Colors.purple),
+          ]),
+        ]);
       },
     );
   }
 
   Widget _buildMacroCard(String label, int current, int goal, Color color) {
-    return Expanded(
-      child: Card(
-        color: color.withOpacity(0.1),
-        elevation: 0,
-        child: Padding(
-          padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 8), 
-          child: Column(
-            mainAxisSize: MainAxisSize.min, 
-            children: [
-              Text(
-                label, 
-                style: TextStyle(color: color, fontWeight: FontWeight.bold),
-                maxLines: 1, 
-                overflow: TextOverflow.ellipsis,
-              ),
-              const SizedBox(height: 8),
-              SizedBox( 
-                height: 40,
-                width: 40,
-                child: Stack(
-                  alignment: Alignment.center,
-                  children: [
-                    CircularProgressIndicator(
-                      value: goal == 0 ? 0 : (current / goal).clamp(0.0, 1.0),
-                      color: color,
-                      backgroundColor: Colors.white,
-                    ),
-                    Text(
-                      "${goal == 0 ? 0 : (current / goal * 100).toInt()}%", 
-                      style: const TextStyle(fontSize: 10)
-                    ),
-                  ],
-                ),
-              ),
-              const SizedBox(height: 8),
-              FittedBox( 
-                child: Text("$current / ${goal}g", style: const TextStyle(fontSize: 12)),
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
+    return Expanded(child: Card(color: color.withOpacity(0.1), elevation: 0, child: Padding(padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 8), child: Column(mainAxisSize: MainAxisSize.min, children: [
+      Text(label, style: TextStyle(color: color, fontWeight: FontWeight.bold), maxLines: 1, overflow: TextOverflow.ellipsis),
+      const SizedBox(height: 8),
+      SizedBox(height: 40, width: 40, child: Stack(alignment: Alignment.center, children: [
+        CircularProgressIndicator(value: goal == 0 ? 0 : (current / goal).clamp(0.0, 1.0), color: color, backgroundColor: Colors.white),
+        Text("${goal == 0 ? 0 : (current / goal * 100).toInt()}%", style: const TextStyle(fontSize: 10)),
+      ])),
+      const SizedBox(height: 8),
+      FittedBox(child: Text("$current / ${goal}g", style: const TextStyle(fontSize: 12))),
+    ]))));
   }
 }

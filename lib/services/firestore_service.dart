@@ -30,6 +30,7 @@ class FirestoreService {
         'currentCoins': 0,
         'unlockedRewardIds': [], 
         'selectedAvatarId': 'default', 
+        'selectedThemeId': 'default',
         'earnedBadges': [], 
         'createdAt': FieldValue.serverTimestamp(),
         'lastActiveDate': FieldValue.serverTimestamp(),
@@ -38,6 +39,8 @@ class FirestoreService {
         'carbsGoal': 200,
         'fatGoal': 70,
         'targetWorkoutsPerWeek': 3, 
+        'dietaryRestrictions': [],
+        'fitnessGoal': 'Maintain',
       });
     }
   }
@@ -60,6 +63,13 @@ class FirestoreService {
     if (_uid == null) return;
     await _db.collection('users').doc(_uid).update({
       'selectedAvatarId': avatarId,
+    });
+  }
+
+  Future<void> equipTheme(String themeId) async {
+    if (_uid == null) return;
+    await _db.collection('users').doc(_uid).update({
+      'selectedThemeId': themeId,
     });
   }
 
@@ -144,10 +154,14 @@ class FirestoreService {
 
     final userRef = _db.collection('users').doc(_uid);
     final taskRef = userRef.collection('tasks').doc(task.id);
+    
+    String bossId = _getCurrentWeekBossId();
+    final bossRef = userRef.collection('boss_battles').doc(bossId);
 
     return await _db.runTransaction<bool>((transaction) async {
       final userSnapshot = await transaction.get(userRef);
       final taskSnapshot = await transaction.get(taskRef);
+      final bossSnapshot = await transaction.get(bossRef);
 
       if (!userSnapshot.exists || !taskSnapshot.exists) {
         throw Exception("Data missing");
@@ -194,8 +208,8 @@ class FirestoreService {
         'earnedBadges': currentBadges, 
       });
 
-      if (newStatus) {
-        _dealBossDamage(10); 
+      if (newStatus && bossSnapshot.exists) {
+        _internalBossDamage(transaction, bossSnapshot, bossRef, userRef, user, 10);
       }
 
       return didLevelUp;
@@ -307,17 +321,20 @@ class FirestoreService {
     final dateId = "${date.year}-${date.month.toString().padLeft(2, '0')}-${date.day.toString().padLeft(2, '0')}";
     final userRef = _db.collection('users').doc(_uid);
     final nutritionRef = userRef.collection('nutrition').doc(dateId);
+    
+    String bossId = _getCurrentWeekBossId();
+    final bossRef = userRef.collection('boss_battles').doc(bossId);
 
-    int dynamicMealDmg = 43; 
-
-    bool leveledUp = await _db.runTransaction<bool>((transaction) async {
+    return await _db.runTransaction<bool>((transaction) async {
       final nutritionDoc = await transaction.get(nutritionRef);
       final userSnapshot = await transaction.get(userRef);
+      final bossSnapshot = await transaction.get(bossRef);
+
       if (!userSnapshot.exists) return false;
       
       final user = UserModel.fromSnapshot(userSnapshot);
       
-      dynamicMealDmg = user.targetWorkoutsPerWeek > 0 
+      int dynamicMealDmg = user.targetWorkoutsPerWeek > 0 
           ? (300 / 7).round() 
           : (1000 / 7).round();
 
@@ -343,11 +360,12 @@ class FirestoreService {
         });
       }
 
+      if (bossSnapshot.exists) {
+        _internalBossDamage(transaction, bossSnapshot, bossRef, userRef, user, dynamicMealDmg);
+      }
+
       return _applyRewards(transaction, userRef, user, 10, 2, updatedBadges: currentBadges);
     });
-
-    await _dealBossDamage(dynamicMealDmg);
-    return leveledUp;
   }
 
   Stream<NutritionDay> getNutritionForDate(DateTime date) {
@@ -471,20 +489,21 @@ class FirestoreService {
     final dateId = "${date.year}-${date.month.toString().padLeft(2, '0')}-${date.day.toString().padLeft(2, '0')}";
     final userRef = _db.collection('users').doc(_uid);
     final workoutRef = userRef.collection('workouts').doc(dateId);
+    
+    String bossId = _getCurrentWeekBossId();
+    final bossRef = userRef.collection('boss_battles').doc(bossId);
 
-    int dynamicWorkoutDmg = 0;
-
-    bool leveledUp = await _db.runTransaction<bool>((transaction) async {
+    return await _db.runTransaction<bool>((transaction) async {
       final workoutDoc = await transaction.get(workoutRef);
-      if (!workoutDoc.exists) return false; 
-      if (workoutDoc.get('isCompleted') == true) return false; 
-
       final userSnapshot = await transaction.get(userRef);
-      if (!userSnapshot.exists) return false;
+      final bossSnapshot = await transaction.get(bossRef);
+
+      if (!workoutDoc.exists || !userSnapshot.exists) return false; 
+      if (workoutDoc.get('isCompleted') == true) return false; 
       
       final user = UserModel.fromSnapshot(userSnapshot);
       
-      dynamicWorkoutDmg = user.targetWorkoutsPerWeek > 0 
+      int dynamicWorkoutDmg = user.targetWorkoutsPerWeek > 0 
           ? (700 / user.targetWorkoutsPerWeek).round() 
           : 0;
 
@@ -494,13 +513,13 @@ class FirestoreService {
       }
 
       transaction.update(workoutRef, {'isCompleted': true});
+
+      if (bossSnapshot.exists && dynamicWorkoutDmg > 0) {
+        _internalBossDamage(transaction, bossSnapshot, bossRef, userRef, user, dynamicWorkoutDmg);
+      }
+
       return _applyRewards(transaction, userRef, user, 100, 20, updatedBadges: currentBadges);
     });
-
-    if (dynamicWorkoutDmg > 0) {
-       await _dealBossDamage(dynamicWorkoutDmg);
-    }
-    return leveledUp;
   }
 
   Future<void> deleteExercise(DateTime date, Exercise exercise) async {
@@ -668,48 +687,29 @@ class FirestoreService {
     });
   }
 
-  Future<void> _dealBossDamage(int damage) async {
-    if (_uid == null) return;
+  void _internalBossDamage(Transaction transaction, DocumentSnapshot bossSnap, DocumentReference bossRef, DocumentReference userRef, UserModel user, int damage) {
+    final boss = BossModel.fromSnapshot(bossSnap);
     
-    String bossId = _getCurrentWeekBossId();
-    final bossRef = _db.collection('users').doc(_uid).collection('boss_battles').doc(bossId);
-    final userRef = _db.collection('users').doc(_uid);
+    if (boss.isDefeated) return;
 
-    await _db.runTransaction((transaction) async {
-      final bossDoc = await transaction.get(bossRef);
-      if (!bossDoc.exists) return;
+    int newHp = (boss.currentHp - damage).clamp(0, boss.maxHp);
+    bool isNowDefeated = newHp == 0;
 
-      final boss = BossModel.fromSnapshot(bossDoc);
-      
-      if (boss.isDefeated) return;
-
-      int newHp = boss.currentHp - damage;
-      if (newHp < 0) newHp = 0;
-      
-      bool isNowDefeated = newHp == 0;
-
-      transaction.update(bossRef, {
-        'currentHp': newHp,
-        'isDefeated': isNowDefeated,
-      });
-
-      if (isNowDefeated) {
-        final userSnapshot = await transaction.get(userRef);
-        if (userSnapshot.exists) {
-          final user = UserModel.fromSnapshot(userSnapshot);
-          
-          List<String> badges = List.from(user.earnedBadges);
-          
-          if (!badges.contains('boss_slayer_1')) {
-            badges.add('boss_slayer_1');
-          }
-
-          _applyRewards(transaction, userRef, user, 500, 100, updatedBadges: badges);
-        }
-      }
+    transaction.update(bossRef, {
+      'currentHp': newHp,
+      'isDefeated': isNowDefeated,
     });
-    
+
+    if (isNowDefeated) {
+      List<String> badges = List.from(user.earnedBadges);
+      if (!badges.contains('boss_slayer_1')) {
+        badges.add('boss_slayer_1');
+      }
+
+      _applyRewards(transaction, userRef, user, 500, 100, updatedBadges: badges);
+    }
   }
+      
   Future<void> updateDietaryPreferences({
     required List<String> restrictions,
     required String goal,
@@ -720,5 +720,4 @@ class FirestoreService {
       'fitnessGoal': goal,
     });
   }
-  
 }

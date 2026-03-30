@@ -1,17 +1,22 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'firebase_options.dart';
-import 'services/auth_service.dart';
-import 'services/theme_service.dart'; // <--- Import this
+import 'services/firestore_service.dart';
+import 'models/user_model.dart';
+import 'theme/app_themes.dart';
 import 'screens/login_screen.dart';
 import 'screens/home_screen.dart';
+import 'screens/onboarding_screen.dart'; 
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await Firebase.initializeApp(
     options: DefaultFirebaseOptions.currentPlatform,
   );
+  await dotenv.load(fileName: ".env");
   runApp(const MotivafitApp());
 }
 
@@ -20,37 +25,19 @@ class MotivafitApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // Wrap MaterialApp with ValueListenableBuilder
-    return ValueListenableBuilder<ThemeMode>(
-      valueListenable: ThemeService().themeMode,
-      builder: (context, currentMode, _) {
+    return StreamBuilder<UserModel>(
+      stream: FirestoreService().getUserStream(),
+      builder: (context, snapshot) {
+        String activeThemeId = 'default';
+
+        if (snapshot.hasData) {
+          activeThemeId = snapshot.data!.selectedThemeId;
+        }
+
         return MaterialApp(
           title: 'Motivafit',
           debugShowCheckedModeBanner: false,
-          
-          // --- THEME CONFIGURATION ---
-          themeMode: currentMode,
-          
-          // Light Theme (Material 3)
-          theme: ThemeData(
-            colorScheme: ColorScheme.fromSeed(
-              seedColor: Colors.blue, 
-              brightness: Brightness.light
-            ),
-            useMaterial3: true,
-            scaffoldBackgroundColor: Colors.grey[50],
-          ),
-          
-          // Dark Theme (Material 3)
-          darkTheme: ThemeData(
-            colorScheme: ColorScheme.fromSeed(
-              seedColor: Colors.blue, 
-              brightness: Brightness.dark
-            ),
-            useMaterial3: true,
-            // Dark mode specific tweaks if needed
-          ),
-
+          theme: AppThemes.getTheme(activeThemeId),
           home: const AuthWrapper(),
         );
       },
@@ -64,15 +51,36 @@ class AuthWrapper extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return StreamBuilder<User?>(
-      stream: AuthService().authStateChanges,
-      builder: (context, snapshot) {
-        if (snapshot.connectionState == ConnectionState.waiting) {
+      stream: FirebaseAuth.instance.authStateChanges(),
+      builder: (context, authSnapshot) {
+        if (authSnapshot.connectionState == ConnectionState.waiting) {
           return const Scaffold(body: Center(child: CircularProgressIndicator()));
         }
-        if (snapshot.hasData) {
-          return const HomeScreen();
+
+        final user = authSnapshot.data;
+
+        if (user != null) {
+          // Check if their Firestore profile actually exists
+          return FutureBuilder<DocumentSnapshot>(
+            future: FirebaseFirestore.instance.collection('users').doc(user.uid).get(),
+            builder: (context, docSnapshot) {
+              if (docSnapshot.connectionState == ConnectionState.waiting) {
+                return const Scaffold(body: Center(child: CircularProgressIndicator()));
+              }
+
+              // Normal user: Go to Home
+              if (docSnapshot.hasData && docSnapshot.data!.exists) {
+                return const HomeScreen();
+              } else {
+                // Missing profile (Brand new or ghost user): Force Onboarding
+                return const OnboardingScreen();
+              }
+            },
+          );
         }
-        return LoginScreen();
+
+        // Not logged in
+        return const LoginScreen();
       },
     );
   }

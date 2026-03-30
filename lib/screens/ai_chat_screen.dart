@@ -26,6 +26,16 @@ class _AIChatScreenState extends State<AIChatScreen> {
     });
   }
 
+  // --- NEW: Function to inject Mo's welcome message ---
+  void _sendWelcomeMessage() {
+    setState(() {
+      _messages.add({
+        "role": "bot",
+        "text": "Hi! I'm Mo, your MotivaFit AI Assistant. 🤖\n\nI can help you crush your goals! Ask me to:\n🥗 Suggest meals based on your calories and diet\n\nWhat can I help you with today?"
+      });
+    });
+  }
+
   void _showDisclaimer() {
     showDialog(
       context: context,
@@ -40,15 +50,21 @@ class _AIChatScreenState extends State<AIChatScreen> {
           ],
         ),
         content: const Text(
-          "This AI Nutritionist provides suggestions based on your profile data. However, AI can make mistakes.\n\n"
+          "This AI Assistant provides suggestions based on your profile data. However, AI can make mistakes.\n\n"
           "• Do not treat this as medical advice.\n"
           "• Double-check ingredients for allergies.\n"
-          "• Consult a doctor before major diet changes.",
+          "• Consult a doctor before major diet or fitness changes.",
           style: TextStyle(fontSize: 14),
         ),
         actions: [
           FilledButton(
-            onPressed: () => Navigator.pop(ctx),
+            onPressed: () {
+              Navigator.pop(ctx);
+              // --- NEW: Trigger welcome message as soon as disclaimer closes ---
+              if (_messages.isEmpty) {
+                _sendWelcomeMessage();
+              }
+            },
             child: const Text("I Understand"),
           ),
         ],
@@ -81,7 +97,8 @@ class _AIChatScreenState extends State<AIChatScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('AI Nutritionist'), centerTitle: true),
+      // --- UPDATED: New Appbar Title ---
+      appBar: AppBar(title: const Text('Mo - AI Assistant'), centerTitle: true),
       body: StreamBuilder<UserModel>(
         stream: FirestoreService().getUserStream(),
         builder: (context, userSnap) {
@@ -144,7 +161,7 @@ class _AIChatScreenState extends State<AIChatScreen> {
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
         color: Theme.of(context).cardColor,
-        boxShadow: [BoxShadow(color: Colors.black12, blurRadius: 4, offset: const Offset(0, -2))],
+        boxShadow: const [BoxShadow(color: Colors.black12, blurRadius: 4, offset: Offset(0, -2))],
       ),
       child: Row(
         children: [
@@ -152,7 +169,8 @@ class _AIChatScreenState extends State<AIChatScreen> {
             child: TextField(
               controller: _controller,
               decoration: const InputDecoration(
-                hintText: 'Ask about meals...',
+                // --- UPDATED: New Input Hint ---
+                hintText: 'Message Mo...',
                 border: InputBorder.none,
               ),
               onSubmitted: (_) => _sendMessage(user, nutrition),

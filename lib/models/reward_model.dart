@@ -17,13 +17,17 @@ class Reward {
 
   // --- Static List of App Rewards ---
   static List<Reward> get presetRewards => [
-    // NEW: Test Avatar for Level 1
-    Reward(id: 'avatar_novice', title: 'Green Novice Avatar', cost: 50, requiredLevel: 1, isPreset: true),
-    
+    // --- UPDATED FOR TESTING: Cost 0, Level 1 ---
+    Reward(id: 'avatar_novice', title: 'Green Novice Avatar', cost: 0, requiredLevel: 1, isPreset: true),
     Reward(id: 'theme_dark', title: 'Dark Mode', cost: 0, requiredLevel: 1, isPreset: true),
-    Reward(id: 'avatar_blue', title: 'Blue Warrior Avatar', cost: 100, requiredLevel: 2, isPreset: true),
-    Reward(id: 'avatar_gold', title: 'Gold Champion Avatar', cost: 500, requiredLevel: 5, isPreset: true),
-    Reward(id: 'theme_neon', title: 'Neon Theme', cost: 1000, requiredLevel: 10, isPreset: true),
+    Reward(id: 'avatar_blue', title: 'Blue Warrior Avatar', cost: 0, requiredLevel: 1, isPreset: true),
+    Reward(id: 'avatar_gold', title: 'Gold Champion Avatar', cost: 0, requiredLevel: 1, isPreset: true),
+    Reward(id: 'theme_neon', title: 'Neon Theme', cost: 0, requiredLevel: 1, isPreset: true),
+    
+    // --- NEW EXTRAS FOR TESTING ---
+    Reward(id: 'avatar_shadow_ninja', title: 'Shadow Ninja Avatar', cost: 0, requiredLevel: 1, isPreset: true),
+    Reward(id: 'avatar_red_knight', title: 'Red Knight Avatar', cost: 0, requiredLevel: 1, isPreset: true),
+    Reward(id: 'theme_retro', title: 'Retro Gaming Theme', cost: 0, requiredLevel: 1, isPreset: true),
   ];
 
   // --- Firestore Serialization (For Custom Rewards) ---

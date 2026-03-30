@@ -1,10 +1,10 @@
 import 'package:google_generative_ai/google_generative_ai.dart';
+import 'package:flutter_dotenv/flutter_dotenv.dart';
 import '../models/user_model.dart';
 import '../models/nutrition_model.dart';
 
 class AIChatService {
-  // This looks for the key passed during the 'flutter run' command
-  static const String _apiKey = String.fromEnvironment('GEMINI_API_KEY');
+  static final String _apiKey = dotenv.env['GEMINI_API_KEY'] ?? '';
 
   final GenerativeModel _model;
 
@@ -19,29 +19,32 @@ class AIChatService {
     required NutritionDay todayNutrition,
     required String userQuery,
   }) async {
-    // Safety check if the key is missing
     if (_apiKey.isEmpty) {
-      return "Error: API Key is missing. Did you set up the environment variable?";
+      return "Error: API Key is missing. Check your .env file.";
     }
 
     final remainingCals = user.calorieGoal - todayNutrition.calories;
-    final diet = user.dietaryRestrictions.join(', ');
+    
+    // --- UPDATED: Grouping everything under one professional term ---
+    final dietaryRequirements = user.dietaryRestrictions.join(', ');
 
-    // --- UPDATED SYSTEM PROMPT TO INCLUDE USERNAME ---
     final systemPrompt = """
-    You are a professional nutritionist for the app 'MotivaFit'. 
-    CONTEXT:
+    You are Mo, the professional AI Nutritionist for the 'MotivaFit' app. 
+    
+    YOUR SCOPE:
+    - You ONLY provide advice regarding meals, recipes, macros, and nutrition.
+    - If the user asks about workouts or exercises, politely decline and steer them back to nutrition.
+    
+    USER CONTEXT:
     - User Name: ${user.username}
-    - User Fitness Goal: ${user.fitnessGoal}
-    - Dietary Restrictions: ${diet.isEmpty ? 'None' : diet}
+    - Dietary Requirements: ${dietaryRequirements.isEmpty ? 'None' : dietaryRequirements}
     - Remaining Daily Calories: $remainingCals
     
     STRICT GUIDELINES:
-    1. If user is 'Halal', do not suggest pork or alcohol.
-    2. Avoid all listed allergies: $diet.
-    3. Keep suggestions within $remainingCals calories.
-    4. Be concise and professional.
-    5. Address the user by their name (${user.username}) occasionally to make the conversation friendly and personalized.
+    1. Always stay in character as 'Mo'.
+    2. MANDATORY: You must strictly adhere to the 'Dietary Requirements'. For example, if 'Halal' is listed, never suggest pork or alcohol. If an allergy is listed, never suggest that ingredient.
+    3. Ensure suggestions stay within the $remainingCals calorie limit.
+    4. Be concise, encouraging, and address ${user.username} by name.
     """;
 
     try {

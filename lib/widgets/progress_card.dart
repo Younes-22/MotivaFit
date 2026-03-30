@@ -26,7 +26,7 @@ class ProgressCard extends StatelessWidget {
     Color avatarColor;
 
     switch (selectedAvatarId) {
-      case 'avatar_novice': // <--- NEW CASE
+      case 'avatar_novice': 
         avatarIcon = Icons.face;
         avatarColor = Colors.greenAccent;
         break;
@@ -38,6 +38,16 @@ class ProgressCard extends StatelessWidget {
         avatarIcon = Icons.emoji_events;
         avatarColor = Colors.amber;
         break;
+      // --- NEW AVATARS ADDED HERE ---
+      case 'avatar_shadow_ninja':
+        avatarIcon = Icons.sports_martial_arts;
+        avatarColor = Colors.deepPurpleAccent;
+        break;
+      case 'avatar_red_knight':
+        avatarIcon = Icons.security;
+        avatarColor = Colors.redAccent;
+        break;
+      // ------------------------------
       case 'default':
       default:
         avatarIcon = Icons.person;
