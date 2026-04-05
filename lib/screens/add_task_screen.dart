@@ -21,16 +21,12 @@ class _AddTaskScreenState extends State<AddTaskScreen> {
   final _titleController = TextEditingController();
   TaskDifficulty _difficulty = TaskDifficulty.easy;
   TaskPriority _priority = TaskPriority.normal;
-  String _category = 'Workout';
   late DateTime _selectedDate; // State for date
   bool _isLoading = false;
 
   @override
   void initState() {
     super.initState();
-    if (widget.initialCategory != null) {
-      _category = widget.initialCategory!;
-    }
     // Default to the passed date or Today
     _selectedDate = widget.initialDate ?? DateTime.now();
   }
@@ -57,10 +53,11 @@ class _AddTaskScreenState extends State<AddTaskScreen> {
     try {
       await FirestoreService().addTask(
         title: _titleController.text,
-        category: _category,
+        // Auto-assign the category behind the scenes so the user doesn't have to!
+        category: widget.initialCategory ?? 'Custom', 
         difficulty: _difficulty,
         priority: _priority,
-        date: _selectedDate, // Use the selected date
+        date: _selectedDate, 
       );
       if (mounted) Navigator.pop(context);
     } catch (e) {
@@ -76,7 +73,7 @@ class _AddTaskScreenState extends State<AddTaskScreen> {
       appBar: AppBar(title: const Text('Add Task')),
       body: Padding(
         padding: const EdgeInsets.all(16),
-        child: SingleChildScrollView( // Added scrolling for smaller screens
+        child: SingleChildScrollView( 
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
@@ -104,15 +101,8 @@ class _AddTaskScreenState extends State<AddTaskScreen> {
               ),
               const SizedBox(height: 16),
 
-              DropdownButtonFormField<String>(
-                value: _category,
-                decoration: const InputDecoration(labelText: 'Category', border: OutlineInputBorder()),
-                items: ['Workout', 'Nutrition', 'Wellness', 'Custom']
-                    .map((c) => DropdownMenuItem(value: c, child: Text(c)))
-                    .toList(),
-                onChanged: (val) => setState(() => _category = val!),
-              ),
-              const SizedBox(height: 16),
+              // --- CATEGORY DROPDOWN REMOVED ---
+
               Row(
                 children: [
                   Expanded(

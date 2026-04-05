@@ -27,27 +27,25 @@ class ProgressCard extends StatelessWidget {
 
     switch (selectedAvatarId) {
       case 'avatar_novice': 
-        avatarIcon = Icons.face;
-        avatarColor = Colors.greenAccent;
+        avatarIcon = Icons.face; // Restored your original design
+        avatarColor = Colors.greenAccent; 
         break;
       case 'avatar_blue':
-        avatarIcon = Icons.shield;
-        avatarColor = Colors.blue;
+        avatarIcon = Icons.shield; // Restored your original design
+        avatarColor = Colors.blue; 
         break;
-      case 'avatar_gold':
-        avatarIcon = Icons.emoji_events;
-        avatarColor = Colors.amber;
+      case 'avatar_fire': // 🔥 NEW: The Crimson Firebender
+        avatarIcon = Icons.local_fire_department;
+        avatarColor = Colors.orange;
         break;
-      // --- NEW AVATARS ADDED HERE ---
       case 'avatar_shadow_ninja':
-        avatarIcon = Icons.sports_martial_arts;
-        avatarColor = Colors.deepPurpleAccent;
+        avatarIcon = Icons.sports_martial_arts; // Restored your original design
+        avatarColor = Colors.deepPurpleAccent; 
         break;
       case 'avatar_red_knight':
-        avatarIcon = Icons.security;
-        avatarColor = Colors.redAccent;
+        avatarIcon = Icons.security; // Restored your original design
+        avatarColor = Colors.redAccent; 
         break;
-      // ------------------------------
       case 'default':
       default:
         avatarIcon = Icons.person;
@@ -79,7 +77,7 @@ class ProgressCard extends StatelessWidget {
                     // --- Avatar Circle ---
                     CircleAvatar(
                       radius: 24,
-                      backgroundColor: Colors.black26,
+                      backgroundColor: Colors.black26, // Restored your original background
                       child: Icon(avatarIcon, color: avatarColor, size: 28),
                     ),
                     const SizedBox(width: 12),

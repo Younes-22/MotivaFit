@@ -2,6 +2,12 @@
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist version="1.0">
 <dict>
+	<key>CLIENT_ID</key>
+	<string>1086619094421-k7ba7b9v3apejjbi4op5ctu3il9gi7f1.apps.googleusercontent.com</string>
+	<key>REVERSED_CLIENT_ID</key>
+	<string>com.googleusercontent.apps.1086619094421-k7ba7b9v3apejjbi4op5ctu3il9gi7f1</string>
+	<key>ANDROID_CLIENT_ID</key>
+	<string>1086619094421-l1akau768u5fk5i81crd510jed1m11eq.apps.googleusercontent.com</string>
 	<key>API_KEY</key>
 	<string>AIzaSyChM5WK7E4LcfKQUZtDmOksDnH48zcnxog</string>
 	<key>GCM_SENDER_ID</key>
@@ -9,7 +15,7 @@
 	<key>PLIST_VERSION</key>
 	<string>1</string>
 	<key>BUNDLE_ID</key>
-	<string>com.example.motivafit</string>
+	<string>com.younes.motivafit.test</string>
 	<key>PROJECT_ID</key>
 	<string>movafit-a2eef</string>
 	<key>STORAGE_BUCKET</key>
@@ -25,6 +31,6 @@
 	<key>IS_SIGNIN_ENABLED</key>
 	<true></true>
 	<key>GOOGLE_APP_ID</key>
-	<string>1:1086619094421:ios:cedbf2ff646297a1c37a9c</string>
+	<string>1:1086619094421:ios:b590aba8379bb507c37a9c</string>
 </dict>
 </plist>

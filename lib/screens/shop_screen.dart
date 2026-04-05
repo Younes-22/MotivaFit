@@ -41,7 +41,6 @@ class _ShopScreenState extends State<ShopScreen> {
     );
   }
 
-  // --- NEW: Theme Equip Helper ---
   void _equipTheme(String rewardId) {
     _firestore.equipTheme(rewardId);
     ScaffoldMessenger.of(context).showSnackBar(
@@ -150,7 +149,6 @@ class _ShopScreenState extends State<ShopScreen> {
   }
 
   Widget _buildMyRewardsTab(UserModel user) {
-    // ... (This remains completely unchanged) ...
     return Scaffold(
       floatingActionButton: FloatingActionButton.extended(
         onPressed: () => _showAddRewardDialog(context),
@@ -179,8 +177,16 @@ class _ShopScreenState extends State<ShopScreen> {
               return Card(
                 child: ListTile(
                   leading: const CircleAvatar(child: Icon(Icons.star)),
-                  title: Text(reward.title),
-                  subtitle: Text('${reward.cost} Coins'),
+                  title: Text(
+                    reward.title,
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                  subtitle: Text(
+                    '${reward.cost} Coins',
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                  ),
                   trailing: Row(
                     mainAxisSize: MainAxisSize.min,
                     children: [
@@ -216,7 +222,6 @@ class _ShopScreenState extends State<ShopScreen> {
         final isLevelLocked = user.currentLevel < reward.requiredLevel;
         final canAfford = user.currentCoins >= reward.cost;
         
-        // --- NEW: Specific checks for Avatar vs Theme ---
         final isAvatarEquipped = user.selectedAvatarId == reward.id;
         final isThemeEquipped = user.selectedThemeId == reward.id;
         bool isAvatar = reward.id.startsWith('avatar_');
@@ -263,10 +268,22 @@ class _ShopScreenState extends State<ShopScreen> {
               isUnlocked ? Icons.check_circle : (isLevelLocked ? Icons.lock : Icons.store),
               color: isUnlocked ? Colors.green : (isLevelLocked ? Colors.grey : Colors.blue),
             ),
-            title: Text(reward.title),
+            title: Text(
+              reward.title,
+              maxLines: 2,
+              overflow: TextOverflow.ellipsis,
+            ),
             subtitle: isLevelLocked 
-              ? Text('Unlocks at Level ${reward.requiredLevel}') 
-              : Text('${reward.cost} Coins'),
+              ? Text(
+                  'Unlocks at Level ${reward.requiredLevel}',
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                ) 
+              : Text(
+                  '${reward.cost} Coins',
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                ),
             trailing: FilledButton(
               onPressed: onPressed,
               child: Text(buttonText),

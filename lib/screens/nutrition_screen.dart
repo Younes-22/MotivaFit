@@ -1,3 +1,4 @@
+import 'dart:async'; // NEW: Imported for the Debouncer Timer
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:mobile_scanner/mobile_scanner.dart'; 
@@ -17,6 +18,7 @@ class NutritionScreen extends StatefulWidget {
 class _NutritionScreenState extends State<NutritionScreen> {
   final FoodService _foodService = FoodService();
   bool _isSearching = false;
+  Timer? _debounce; // NEW: The Debouncer Timer variable
 
   // ===========================================================================
   // 1. BARCODE SCANNING
@@ -65,7 +67,12 @@ class _NutritionScreenState extends State<NutritionScreen> {
     if (result != null && result is String) {
       setState(() => _isSearching = true);
       try {
-        final food = await _foodService.getFoodByBarcode(result);
+        // Added a timeout to the barcode scanner as well to prevent silent hanging
+        final food = await _foodService.getFoodByBarcode(result).timeout(
+          const Duration(seconds: 10),
+          onTimeout: () => throw Exception("Server took too long. Try Manual Entry!"),
+        );
+        
         if (mounted && food != null) {
           _showLogFoodDialog(context, initialFood: food);
         } else if (mounted) {
@@ -74,7 +81,10 @@ class _NutritionScreenState extends State<NutritionScreen> {
           );
         }
       } catch (e) {
-        if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Error: $e')));
+        if (mounted) {
+          final errorMsg = e.toString().replaceAll("Exception: ", "");
+          ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(errorMsg), backgroundColor: Colors.red));
+        }
       } finally {
         if (mounted) setState(() => _isSearching = false);
       }
@@ -107,7 +117,6 @@ class _NutritionScreenState extends State<NutritionScreen> {
             const SizedBox(height: 20),
             const Text("OR", style: TextStyle(color: Colors.grey, fontSize: 12)),
             const SizedBox(height: 12),
-            // --- UPDATED: Added Manual Entry trigger here ---
             OutlinedButton.icon(
               icon: const Icon(Icons.edit_note),
               label: const Text('Enter Manually'),
@@ -133,41 +142,72 @@ class _NutritionScreenState extends State<NutritionScreen> {
   }
 
   void _performSearch(BuildContext context, String query) async {
-    if (query.isEmpty) return;
-    setState(() => _isSearching = true);
-    final results = await _foodService.searchFood(query);
-    setState(() => _isSearching = false);
+    if (query.trim().isEmpty) return;
 
-    if (!mounted) return;
-    if (results.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('No results. Try Manual Entry!')));
-      return;
-    }
+    // --- NEW: Debouncer Logic ---
+    // If the user triggers search multiple times quickly, cancel the previous one
+    if (_debounce?.isActive ?? false) _debounce!.cancel();
 
-    showDialog(
-      context: context,
-      builder: (ctx) => AlertDialog(
-        title: Text('Results for "$query"'),
-        content: SizedBox(
-          width: double.maxFinite,
-          height: 300,
-          child: ListView.builder(
-            itemCount: results.length,
-            itemBuilder: (context, index) {
-              final food = results[index];
-              return ListTile(
-                title: Text(food.name),
-                subtitle: Text('${food.calories} kcal / 100g'),
-                onTap: () {
-                  Navigator.pop(ctx);
-                  _showLogFoodDialog(context, initialFood: food);
+    _debounce = Timer(const Duration(milliseconds: 500), () async {
+      setState(() => _isSearching = true);
+
+      try {
+        // --- NEW: Timeout & Rate Limit Handling ---
+        // Forces the app to throw an error if the public database hangs for > 10 seconds
+        final results = await _foodService.searchFood(query).timeout(
+          const Duration(seconds: 10),
+          onTimeout: () => throw Exception("Server is busy or rate-limiting. Try Manual Entry!"),
+        );
+
+        if (!mounted) return;
+        setState(() => _isSearching = false);
+
+        if (results.isEmpty) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('No results found (Server might be rate-limiting). Try Manual Entry!'), 
+              backgroundColor: Colors.orange
+            )
+          );
+          return;
+        }
+
+        showDialog(
+          context: context,
+          builder: (ctx) => AlertDialog(
+            title: Text('Results for "$query"'),
+            content: SizedBox(
+              width: double.maxFinite,
+              height: 300,
+              child: ListView.builder(
+                itemCount: results.length,
+                itemBuilder: (context, index) {
+                  final food = results[index];
+                  return ListTile(
+                    title: Text(food.name),
+                    subtitle: Text('${food.calories} kcal / 100g'),
+                    onTap: () {
+                      Navigator.pop(ctx);
+                      _showLogFoodDialog(context, initialFood: food);
+                    },
+                  );
                 },
-              );
-            },
+              ),
+            ),
           ),
-        ),
-      ),
-    );
+        );
+
+      } catch (e) {
+        if (!mounted) return;
+        setState(() => _isSearching = false);
+        
+        // Clean up the error message for the user
+        final errorMsg = e.toString().replaceAll("Exception: ", "");
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(errorMsg), backgroundColor: Colors.red),
+        );
+      }
+    });
   }
 
   // ===========================================================================
@@ -303,7 +343,6 @@ class _NutritionScreenState extends State<NutritionScreen> {
     );
   }
 
-  // Helper to handle the Level Up / SnackBar logic for both manual & automatic logs
   void _handleLoggingOutcome(bool leveledUp) {
     if (leveledUp) {
       showDialog(
@@ -434,7 +473,6 @@ class _NutritionScreenState extends State<NutritionScreen> {
     );
   }
 
-  // Graph and Summary Widgets remain the same...
   Widget _buildWeeklyGraph(FirestoreService firestore, int goal, ThemeData theme) {
     return Container(
       height: 200,

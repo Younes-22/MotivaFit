@@ -5,7 +5,7 @@ class Reward {
   final String title;
   final int cost;
   final int requiredLevel; 
-  final bool isPreset; // true = Permanent Unlock (Avatar), false = Consumable (Custom)
+  final bool isPreset; // true = Permanent Unlock (Avatar/Theme), false = Consumable (Custom)
 
   Reward({
     required this.id,
@@ -17,14 +17,13 @@ class Reward {
 
   // --- Static List of App Rewards ---
   static List<Reward> get presetRewards => [
-    // --- UPDATED FOR TESTING: Cost 0, Level 1 ---
     Reward(id: 'avatar_novice', title: 'Green Novice Avatar', cost: 0, requiredLevel: 1, isPreset: true),
-    Reward(id: 'theme_dark', title: 'Dark Mode', cost: 0, requiredLevel: 1, isPreset: true),
     Reward(id: 'avatar_blue', title: 'Blue Warrior Avatar', cost: 0, requiredLevel: 1, isPreset: true),
-    Reward(id: 'avatar_gold', title: 'Gold Champion Avatar', cost: 0, requiredLevel: 1, isPreset: true),
-    Reward(id: 'theme_neon', title: 'Neon Theme', cost: 0, requiredLevel: 1, isPreset: true),
     
-    // --- NEW EXTRAS FOR TESTING ---
+    // 🔥 NEW: Crimson Firebender (Replaced Gold Champion)
+    Reward(id: 'avatar_fire', title: 'Crimson Firebender Avatar', cost: 0, requiredLevel: 1, isPreset: true),
+    
+    Reward(id: 'theme_neon', title: 'Neon Theme', cost: 0, requiredLevel: 1, isPreset: true),
     Reward(id: 'avatar_shadow_ninja', title: 'Shadow Ninja Avatar', cost: 0, requiredLevel: 1, isPreset: true),
     Reward(id: 'avatar_red_knight', title: 'Red Knight Avatar', cost: 0, requiredLevel: 1, isPreset: true),
     Reward(id: 'theme_retro', title: 'Retro Gaming Theme', cost: 0, requiredLevel: 1, isPreset: true),

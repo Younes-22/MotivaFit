@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
@@ -13,6 +14,10 @@ import 'screens/onboarding_screen.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
+  await SystemChrome.setPreferredOrientations([
+    DeviceOrientation.portraitUp,
+    DeviceOrientation.portraitDown,
+  ]);
   await Firebase.initializeApp(
     options: DefaultFirebaseOptions.currentPlatform,
   );
@@ -60,7 +65,6 @@ class AuthWrapper extends StatelessWidget {
         final user = authSnapshot.data;
 
         if (user != null) {
-          // Check if their Firestore profile actually exists
           return FutureBuilder<DocumentSnapshot>(
             future: FirebaseFirestore.instance.collection('users').doc(user.uid).get(),
             builder: (context, docSnapshot) {
@@ -68,18 +72,15 @@ class AuthWrapper extends StatelessWidget {
                 return const Scaffold(body: Center(child: CircularProgressIndicator()));
               }
 
-              // Normal user: Go to Home
               if (docSnapshot.hasData && docSnapshot.data!.exists) {
                 return const HomeScreen();
               } else {
-                // Missing profile (Brand new or ghost user): Force Onboarding
                 return const OnboardingScreen();
               }
             },
           );
         }
 
-        // Not logged in
         return const LoginScreen();
       },
     );

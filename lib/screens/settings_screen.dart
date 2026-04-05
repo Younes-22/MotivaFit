@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import '../models/user_model.dart';
 import '../services/auth_service.dart';
 import '../services/firestore_service.dart';
-import '../services/theme_service.dart';
 import '../services/pdf_service.dart';
 
 class SettingsScreen extends StatefulWidget {
@@ -13,19 +12,12 @@ class SettingsScreen extends StatefulWidget {
 }
 
 class _SettingsScreenState extends State<SettingsScreen> {
-  bool _isDark = ThemeService().isDarkMode;
   final PdfService _pdfService = PdfService();
   final TextEditingController _customController = TextEditingController();
 
   final List<String> _presetRestrictions = [
-    'Halal',
-    'Vegan',
-    'Vegetarian',
-    'Pescetarian',
-    'Gluten-Free',
-    'Dairy-Free',
-    'Keto',
-    'No Nuts',
+    'Halal', 'Vegan', 'Vegetarian', 'Pescetarian', 
+    'Gluten-Free', 'Dairy-Free', 'Keto', 'No Nuts',
   ];
 
   final List<String> _goals = ['Lose Weight', 'Maintain', 'Build Muscle'];
@@ -52,33 +44,6 @@ class _SettingsScreenState extends State<SettingsScreen> {
     }
   }
 
-  void _showResetConfirmation(BuildContext context) {
-    showDialog(
-      context: context,
-      builder: (ctx) => AlertDialog(
-        title: const Text('Reset Account?'),
-        content: const Text(
-          'This will reset your Level, XP, Coins, and Badges. '
-          'This is intended for testing/demos.',
-        ),
-        actions: [
-          TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('Cancel')),
-          FilledButton(
-            style: FilledButton.styleFrom(backgroundColor: Colors.red),
-            onPressed: () async {
-              await FirestoreService().resetAccount();
-              if (ctx.mounted) {
-                Navigator.pop(ctx);
-                ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Account Reset Successful')));
-              }
-            },
-            child: const Text('RESET EVERYTHING'),
-          ),
-        ],
-      ),
-    );
-  }
-
   // --- UI BUILDER ---
 
   @override
@@ -94,6 +59,9 @@ class _SettingsScreenState extends State<SettingsScreen> {
           
           final user = snapshot.data!;
           List<String> userRestrictions = List.from(user.dietaryRestrictions);
+          
+          // Determine if dark mode is active based on the exact Firestore ID
+          bool isDarkModeEnabled = user.selectedThemeId == 'theme_dark';
 
           return ListView(
             children: [
@@ -104,10 +72,10 @@ class _SettingsScreenState extends State<SettingsScreen> {
               SwitchListTile(
                 title: const Text('Dark Mode'),
                 secondary: const Icon(Icons.dark_mode),
-                value: _isDark,
+                value: isDarkModeEnabled,
                 onChanged: (val) {
-                  setState(() => _isDark = val);
-                  ThemeService().toggleTheme(val);
+                  // Save the exact ID to Firestore so AppThemes recognizes it
+                  firestore.equipTheme(val ? 'theme_dark' : 'default');
                 },
               ),
               const Divider(),
@@ -170,15 +138,6 @@ class _SettingsScreenState extends State<SettingsScreen> {
               ),
               const Divider(),
 
-              // --- SECTION: DEBUG ZONE ---
-              _buildSectionHeader('Debug Zone (For Demo)'),
-              ListTile(
-                leading: const Icon(Icons.refresh, color: Colors.orange),
-                title: const Text('Reset User Stats'),
-                onTap: () => _showResetConfirmation(context),
-              ),
-              const Divider(),
-
               // --- SECTION: ACCOUNT ---
               _buildSectionHeader('Account'),
               ListTile(
@@ -186,15 +145,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 title: const Text('Log Out', style: TextStyle(color: Colors.red)),
                 onTap: _handleLogout,
               ),
-              const Divider(),
-
-              // --- SECTION: ABOUT ---
-              _buildSectionHeader('About'),
-              const ListTile(
-                leading: Icon(Icons.info_outline),
-                title: Text('Motivafit'),
-                subtitle: Text('Final Year Project v1.0'),
-              ),
+              const SizedBox(height: 24), // Extra padding at the bottom
             ],
           );
         },

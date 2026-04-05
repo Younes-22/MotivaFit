@@ -1,6 +1,10 @@
 import 'dart:convert';
 import 'package:http/http.dart' as http;
+import 'package:flutter_dotenv/flutter_dotenv.dart';
 
+// ===========================================================================
+// 1. DATA MODEL (Restored from your original file!)
+// ===========================================================================
 class FoodItem {
   final String name;
   final int calories;
@@ -15,64 +19,77 @@ class FoodItem {
     required this.carbs,
     required this.fat,
   });
-
-  factory FoodItem.fromJson(Map<String, dynamic> json) {
-    // Open Food Facts varies a lot, so we need safe parsing
-    final nutriments = json['nutriments'] ?? {};
-    
-    return FoodItem(
-      name: json['product_name'] ?? 'Unknown Food',
-      // API returns kJ or kcal, usually we want kcal
-      calories: (nutriments['energy-kcal_100g'] ?? 0).toInt(),
-      protein: (nutriments['proteins_100g'] ?? 0).toInt(),
-      carbs: (nutriments['carbohydrates_100g'] ?? 0).toInt(),
-      fat: (nutriments['fat_100g'] ?? 0).toInt(),
-    );
-  }
 }
 
+// ===========================================================================
+// 2. EDAMAM API ENGINE
+// ===========================================================================
 class FoodService {
-  static const String _baseUrl = 'https://world.openfoodfacts.org';
+  final String _baseUrl = 'https://api.edamam.com/api/food-database/v2/parser';
+  
+  // Grabs your keys safely from the .env file
+  final String _appId = dotenv.env['EDAMAM_APP_ID'] ?? '';
+  final String _appKey = dotenv.env['EDAMAM_APP_KEY'] ?? '';
 
-  // 1. Search by Name
+  // --- Search by Name (Text Search) ---
+// --- Search by Name (Text Search) ---
   Future<List<FoodItem>> searchFood(String query) async {
-    final url = Uri.parse('$_baseUrl/cgi/search.pl?search_terms=$query&search_simple=1&action=process&json=1');
-    
     try {
-      final response = await http.get(url, headers: {'User-Agent': 'Motivafit - Student Project'});
-      
+      final url = Uri.parse('$_baseUrl?app_id=$_appId&app_key=$_appKey&ingr=${Uri.encodeComponent(query)}');
+      final response = await http.get(url);
+
       if (response.statusCode == 200) {
         final data = json.decode(response.body);
-        final products = data['products'] as List?;
+        final List hints = data['hints'] ?? [];
         
-        if (products == null) return [];
-
-        return products.map((p) => FoodItem.fromJson(p)).toList();
+        return hints.take(15).map((hint) {
+          final food = hint['food'];
+          final nutrients = food['nutrients'] ?? {};
+          return FoodItem(
+            name: food['label'] ?? 'Unknown Food',
+            calories: (nutrients['ENERC_KCAL'] ?? 0).round(),
+            protein: (nutrients['PROCNT'] ?? 0).round(),
+            carbs: (nutrients['CHOCDF'] ?? 0).round(),
+            fat: (nutrients['FAT'] ?? 0).round(),
+          );
+        }).toList();
+      } else {
+        // NEW: Force the app to show the actual server error!
+        throw Exception("Edamam Error ${response.statusCode}: ${response.body}");
       }
-      return [];
     } catch (e) {
       print("Error searching food: $e");
-      return [];
+      // Pass the real error up to the UI instead of a generic message
+      throw Exception(e.toString()); 
     }
   }
 
-  // 2. Search by Barcode
+  // --- Search by Barcode ---
   Future<FoodItem?> getFoodByBarcode(String barcode) async {
-    final url = Uri.parse('$_baseUrl/api/v0/product/$barcode.json');
-
     try {
-      final response = await http.get(url, headers: {'User-Agent': 'Motivafit - Student Project'});
-      
+      final url = Uri.parse('$_baseUrl?app_id=$_appId&app_key=$_appKey&upc=$barcode');
+      final response = await http.get(url);
+
       if (response.statusCode == 200) {
         final data = json.decode(response.body);
-        if (data['status'] == 1) {
-          return FoodItem.fromJson(data['product']);
+        final List hints = data['hints'] ?? [];
+        
+        if (hints.isNotEmpty) {
+          final food = hints.first['food'];
+          final nutrients = food['nutrients'] ?? {};
+          return FoodItem(
+            name: food['label'] ?? 'Unknown Product',
+            calories: (nutrients['ENERC_KCAL'] ?? 0).round(),
+            protein: (nutrients['PROCNT'] ?? 0).round(),
+            carbs: (nutrients['CHOCDF'] ?? 0).round(),
+            fat: (nutrients['FAT'] ?? 0).round(),
+          );
         }
       }
-      return null;
+      return null; 
     } catch (e) {
       print("Error scanning barcode: $e");
-      return null;
+      throw Exception("Could not find barcode. Try manual entry.");
     }
   }
 }
