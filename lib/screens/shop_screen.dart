@@ -3,6 +3,7 @@ import '../models/reward_model.dart';
 import '../models/user_model.dart';
 import '../services/firestore_service.dart';
 
+// The digital storefront where users can spend their hard-earned coins. It is split into two tabs: one for custom real-life treats, and another for in-app cosmetics.
 class ShopScreen extends StatefulWidget {
   const ShopScreen({super.key});
 
@@ -10,9 +11,11 @@ class ShopScreen extends StatefulWidget {
   State<ShopScreen> createState() => _ShopScreenState();
 }
 
+// Manages the logic for buying items, equipping cosmetics, and creating custom rewards.
 class _ShopScreenState extends State<ShopScreen> {
   final FirestoreService _firestore = FirestoreService();
 
+  // Attempts to purchase a reward using the user's coins. If successful, it throws a celebratory pop-up. If they can't afford it or an error occurs, it lets them know.
   void _buyReward(Reward reward) async {
     String? error = await _firestore.purchaseReward(reward);
 
@@ -34,6 +37,7 @@ class _ShopScreenState extends State<ShopScreen> {
     }
   }
 
+  // Instantly updates the user's profile to display their newly equipped avatar.
   void _equipItem(String rewardId) {
     _firestore.equipAvatar(rewardId);
     ScaffoldMessenger.of(context).showSnackBar(
@@ -41,6 +45,7 @@ class _ShopScreenState extends State<ShopScreen> {
     );
   }
 
+  // Instantly applies a newly purchased theme to the user's database profile.
   void _equipTheme(String rewardId) {
     _firestore.equipTheme(rewardId);
     ScaffoldMessenger.of(context).showSnackBar(
@@ -48,10 +53,13 @@ class _ShopScreenState extends State<ShopScreen> {
     );
   }
 
+  // Removes a custom reward from the database if the user no longer wants it.
   void _deleteCustomReward(String id) {
     _firestore.deleteCustomReward(id);
   }
 
+  // Pops open a small form for users to invent their own motivation. 
+  // For example, they can create a "1 Hour of Gaming" reward and price it at 50 coins.
   void _showAddRewardDialog(BuildContext context) {
     final titleController = TextEditingController();
     final costController = TextEditingController();
@@ -93,6 +101,7 @@ class _ShopScreenState extends State<ShopScreen> {
     );
   }
 
+  // The main layout. It sets up a persistent header showing the user's current coin bank, followed by a swipeable tab view for the two different shops.
   @override
   Widget build(BuildContext context) {
     return DefaultTabController(
@@ -118,7 +127,7 @@ class _ShopScreenState extends State<ShopScreen> {
               children: [
                 Container(
                   padding: const EdgeInsets.all(16),
-                  color: Theme.of(context).colorScheme.surfaceVariant.withOpacity(0.3),
+                  color: Theme.of(context).colorScheme.surfaceVariant.withValues(alpha: 0.3),
                   child: Row(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
@@ -148,6 +157,7 @@ class _ShopScreenState extends State<ShopScreen> {
     );
   }
 
+  // The custom rewards tab. It fetches the user's personal treats and disables the "Redeem" button if their bank balance is too low.
   Widget _buildMyRewardsTab(UserModel user) {
     return Scaffold(
       floatingActionButton: FloatingActionButton.extended(
@@ -209,6 +219,7 @@ class _ShopScreenState extends State<ShopScreen> {
     );
   }
 
+  // The cosmetic shop. This contains logic to check if an item is locked behind a specific user level, too expensive, already owned, or actively equipped.
   Widget _buildItemShopTab(UserModel user) {
     final rewards = Reward.presetRewards;
 

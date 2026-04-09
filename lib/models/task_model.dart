@@ -22,7 +22,7 @@ class Task {
     this.isCompleted = false,
   });
 
-  // --- Gamification Logic ---
+  // The gamification logic
   int get xpReward {
     switch (difficulty) {
       case TaskDifficulty.easy: return 25;
@@ -49,7 +49,7 @@ class Task {
     return (base * multiplier).round();
   }
 
-  // --- Firestore Serialization ---
+  // Firestore serialization
   factory Task.fromSnapshot(DocumentSnapshot doc) {
     final data = doc.data() as Map<String, dynamic>;
     return Task(

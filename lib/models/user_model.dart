@@ -9,7 +9,7 @@ class UserModel {
   final int currentCoins;
   final List<String> unlockedRewardIds;
   final String selectedAvatarId;
-  final String selectedThemeId; // <--- 1. NEW PROPERTY
+  final String selectedThemeId;
   final List<String> earnedBadges; 
   
   final int calorieGoal;
@@ -18,9 +18,8 @@ class UserModel {
   final int fatGoal;     
   final int targetWorkoutsPerWeek;
 
-  // --- NEW FIELDS ---
-  final List<String> dietaryRestrictions; // e.g. ['Halal', 'Vegan', 'No Nuts']
-  final String fitnessGoal; // e.g. 'Lose Weight', 'Build Muscle', 'Maintain'
+  final List<String> dietaryRestrictions; // For example Halal and Vegan
+  final String fitnessGoal; // For example Lose Weight and Build Muscle
 
   UserModel({
     required this.uid,
@@ -31,7 +30,7 @@ class UserModel {
     this.currentCoins = 0,
     this.unlockedRewardIds = const [],
     this.selectedAvatarId = 'default',
-    this.selectedThemeId = 'default', // <--- 2. NEW DEFAULT VALUE
+    this.selectedThemeId = 'default',
     this.earnedBadges = const [], 
     this.calorieGoal = 2000,
     this.proteinGoal = 150,
@@ -53,7 +52,7 @@ class UserModel {
       currentCoins: data['currentCoins'] ?? 0,
       unlockedRewardIds: List<String>.from(data['unlockedRewardIds'] ?? []),
       selectedAvatarId: data['selectedAvatarId'] ?? 'default',
-      selectedThemeId: data['selectedThemeId'] ?? 'default', // <--- 3. READ FROM FIRESTORE
+      selectedThemeId: data['selectedThemeId'] ?? 'default',
       earnedBadges: List<String>.from(data['earnedBadges'] ?? []), 
       calorieGoal: data['calorieGoal'] ?? 2000,
       proteinGoal: data['proteinGoal'] ?? 150,
@@ -74,7 +73,7 @@ class UserModel {
       'currentCoins': currentCoins,
       'unlockedRewardIds': unlockedRewardIds,
       'selectedAvatarId': selectedAvatarId,
-      'selectedThemeId': selectedThemeId, // <--- 4. WRITE TO FIRESTORE
+      'selectedThemeId': selectedThemeId,
       'earnedBadges': earnedBadges, 
       'lastActiveDate': FieldValue.serverTimestamp(),
       'calorieGoal': calorieGoal,

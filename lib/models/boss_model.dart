@@ -1,7 +1,7 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 
 class BossModel {
-  final String id; // e.g., "boss_2026_03_09" (based on the Monday of that week)
+  final String id; // e.g., "boss_2026_03_09" which based on the Monday of that week
   final String name;
   final int maxHp;
   final int currentHp;

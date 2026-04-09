@@ -2,8 +2,8 @@ class Reward {
   final String id;
   final String name;
   final int coinCost;
-  final int minLevelRequired; // 1 for basic items
-  final bool isUserDefined;   // True = "Netflix", False = "App Avatar"
+  final int minLevelRequired; // 1 for example
+  final bool isUserDefined;   // Netflix for example = True
 
   Reward({
     required this.id,

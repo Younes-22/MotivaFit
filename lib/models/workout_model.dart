@@ -28,7 +28,7 @@ class WorkoutDay {
 
 class WorkoutRoutine {
   final String id;
-  final String name; // e.g., "Push Day"
+  final String name; // Push Day for example
   final List<Exercise> exercises;
 
   WorkoutRoutine({required this.id, required this.name, required this.exercises});

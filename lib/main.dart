@@ -39,10 +39,37 @@ class MotivafitApp extends StatelessWidget {
           activeThemeId = snapshot.data!.selectedThemeId;
         }
 
+        ThemeData appTheme;
+        ThemeData appDarkTheme;
+        ThemeMode currentThemeMode;
+
+        if (activeThemeId == 'default' || activeThemeId == 'system') {
+          appTheme = AppThemes.getTheme('default');
+          appDarkTheme = AppThemes.getTheme('theme_dark');
+          currentThemeMode = ThemeMode.system;
+        } 
+        else if (activeThemeId == 'theme_light') {
+          appTheme = AppThemes.getTheme('default');
+          appDarkTheme = AppThemes.getTheme('default'); 
+          currentThemeMode = ThemeMode.light;
+        } 
+        else if (activeThemeId == 'theme_dark') {
+          appTheme = AppThemes.getTheme('theme_dark');
+          appDarkTheme = AppThemes.getTheme('theme_dark');
+          currentThemeMode = ThemeMode.dark;
+        } 
+        else {
+          appTheme = AppThemes.getTheme(activeThemeId);
+          appDarkTheme = AppThemes.getTheme(activeThemeId);
+          currentThemeMode = ThemeMode.light; 
+        }
+
         return MaterialApp(
           title: 'Motivafit',
           debugShowCheckedModeBanner: false,
-          theme: AppThemes.getTheme(activeThemeId),
+          theme: appTheme,
+          darkTheme: appDarkTheme,
+          themeMode: currentThemeMode,
           home: const AuthWrapper(),
         );
       },

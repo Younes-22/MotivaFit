@@ -20,13 +20,13 @@ class _AIChatScreenState extends State<AIChatScreen> {
   @override
   void initState() {
     super.initState();
-    // Show the medical disclaimer as soon as the screen loads
+    // Show the medical disclaimer right when the screen loads
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _showDisclaimer();
     });
   }
 
-  // --- NEW: Function to inject Mo's welcome message ---
+  // Drops Mo's initial greeting into the chat UI
   void _sendWelcomeMessage() {
     setState(() {
       _messages.add({
@@ -36,10 +36,11 @@ class _AIChatScreenState extends State<AIChatScreen> {
     });
   }
 
+  // Forces the user to acknowledge the AI warning before they can start chatting
   void _showDisclaimer() {
     showDialog(
       context: context,
-      barrierDismissible: false, // User MUST click "I Understand"
+      barrierDismissible: false, // Prevents them from tapping outside the box to bypass it
       builder: (ctx) => AlertDialog(
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
         title: const Row(
@@ -60,7 +61,7 @@ class _AIChatScreenState extends State<AIChatScreen> {
           FilledButton(
             onPressed: () {
               Navigator.pop(ctx);
-              // --- NEW: Trigger welcome message as soon as disclaimer closes ---
+              // Trigger the welcome message right after they accept the disclaimer
               if (_messages.isEmpty) {
                 _sendWelcomeMessage();
               }
@@ -72,6 +73,7 @@ class _AIChatScreenState extends State<AIChatScreen> {
     );
   }
 
+  // Sends the user's message to the AI service and waits for Mo's response
   void _sendMessage(UserModel user, NutritionDay nutrition) async {
     if (_controller.text.trim().isEmpty) return;
 
@@ -94,10 +96,10 @@ class _AIChatScreenState extends State<AIChatScreen> {
     });
   }
 
+  // The main layout. We wrap the whole screen in StreamBuilders so Mo always has access to your live profile stats and today's calories when you chat.
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      // --- UPDATED: New Appbar Title ---
       appBar: AppBar(title: const Text('Mo - AI Assistant'), centerTitle: true),
       body: StreamBuilder<UserModel>(
         stream: FirestoreService().getUserStream(),
@@ -132,6 +134,7 @@ class _AIChatScreenState extends State<AIChatScreen> {
     );
   }
 
+  // Builds a single chat bubble. It flips the alignment and colors depending on whether the message is from the user or from Mo.
   Widget _buildChatBubble(bool isUser, String text) {
     return Align(
       alignment: isUser ? Alignment.centerRight : Alignment.centerLeft,
@@ -156,6 +159,7 @@ class _AIChatScreenState extends State<AIChatScreen> {
     );
   }
 
+  // The text bar at the bottom. It packages up your current profile and nutrition data to send off to the AI along with your typed message.
   Widget _buildInputArea(UserModel user, NutritionDay nutrition) {
     return Container(
       padding: const EdgeInsets.all(16),
@@ -169,7 +173,6 @@ class _AIChatScreenState extends State<AIChatScreen> {
             child: TextField(
               controller: _controller,
               decoration: const InputDecoration(
-                // --- UPDATED: New Input Hint ---
                 hintText: 'Message Mo...',
                 border: InputBorder.none,
               ),

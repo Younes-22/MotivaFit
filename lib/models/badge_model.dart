@@ -17,9 +17,9 @@ class BadgeModel {
     required this.icon,
   });
 
-  // A static list of all badges available in the game
+  // A list of all badges available in the game
   static const List<BadgeModel> allBadges = [
-    // COMMON
+    // Common
     BadgeModel(
       id: 'first_workout',
       name: 'First Steps',
@@ -35,7 +35,7 @@ class BadgeModel {
       icon: Icons.restaurant,
     ),
     
-    // RARE
+    // Rare
     BadgeModel(
       id: 'level_5',
       name: 'Rising Star',
@@ -51,7 +51,7 @@ class BadgeModel {
       icon: Icons.shield,
     ),
 
-    // LEGENDARY
+    // Legendary
     BadgeModel(
       id: 'level_50',
       name: 'Titan of Fitness',

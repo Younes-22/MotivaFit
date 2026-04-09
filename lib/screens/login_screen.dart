@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 
+// This screen acts as the gateway to the app. It handles both logging in existing users and creating brand new accounts by flipping the `_isLogin` variable to change the UI and logic.
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
 
@@ -10,6 +11,7 @@ class LoginScreen extends StatefulWidget {
 }
 
 class _LoginScreenState extends State<LoginScreen> {
+  // The form key is essential for validating the text fields (e.g., making sure the email has an '@' symbol) before we actually try to send any data to Firebase.
   final _formKey = GlobalKey<FormState>();
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
@@ -19,6 +21,7 @@ class _LoginScreenState extends State<LoginScreen> {
   bool _isGoogleLoading = false;
   bool _obscurePassword = true;
 
+  // Triggers when the user taps the main action button. It validates the form, shows a loading spinner, and then either signs the user in or creates a new account based on the current mode.
   Future<void> _submit() async {
     if (!_formKey.currentState!.validate()) return;
     
@@ -49,6 +52,7 @@ class _LoginScreenState extends State<LoginScreen> {
     }
   }
 
+  // Handles the Google Sign-In flow. It opens the Google account prompt, grabs the user's secure ID token, and hands it over to Firebase so they can be authenticated in our database.
   Future<void> _signInWithGoogle() async {
     setState(() => _isGoogleLoading = true);
     try {
@@ -81,6 +85,7 @@ class _LoginScreenState extends State<LoginScreen> {
     }
   }
 
+  // A quick helper to send a password reset link. We verify they actually typed an email into the box first so Firebase doesn't throw an empty-field error.
   Future<void> _resetPassword() async {
     final email = _emailController.text.trim();
     if (email.isEmpty || !email.contains('@')) {
@@ -123,6 +128,7 @@ class _LoginScreenState extends State<LoginScreen> {
 
     return Scaffold(
       body: Center(
+        // Wrapping the form in a SingleChildScrollView ensures that when the device keyboard pops up, the screen can scroll instead of throwing a "RenderFlex Overflow" error.
         child: SingleChildScrollView(
           padding: const EdgeInsets.all(24.0),
           child: Form(
@@ -131,6 +137,8 @@ class _LoginScreenState extends State<LoginScreen> {
               mainAxisAlignment: MainAxisAlignment.center,
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
+                
+                // AI CITATION: The concept of using the Material 'fire' icon as the app's motivational logo, along with the spacing and structure of this form, was suggested by AI.
                 Icon(
                   Icons.local_fire_department_rounded, 
                   size: 80,
@@ -155,6 +163,7 @@ class _LoginScreenState extends State<LoginScreen> {
                   ),
                 ),
                 const SizedBox(height: 40),
+                
                 TextFormField(
                   controller: _emailController,
                   keyboardType: TextInputType.emailAddress,
@@ -173,6 +182,7 @@ class _LoginScreenState extends State<LoginScreen> {
                   },
                 ),
                 const SizedBox(height: 16),
+                
                 TextFormField(
                   controller: _passwordController,
                   obscureText: _obscurePassword,
@@ -198,6 +208,7 @@ class _LoginScreenState extends State<LoginScreen> {
                     return null;
                   },
                 ),
+                
                 if (_isLogin)
                   Align(
                     alignment: Alignment.centerRight,
@@ -208,6 +219,7 @@ class _LoginScreenState extends State<LoginScreen> {
                   )
                 else
                   const SizedBox(height: 24),
+                  
                 const SizedBox(height: 16),
                 SizedBox(
                   height: 50,
@@ -238,6 +250,7 @@ class _LoginScreenState extends State<LoginScreen> {
                   ),
                 ),
                 const SizedBox(height: 24),
+                
                 const Row(
                   children: [
                     Expanded(child: Divider()),
@@ -249,6 +262,7 @@ class _LoginScreenState extends State<LoginScreen> {
                   ],
                 ),
                 const SizedBox(height: 24),
+                
                 _isGoogleLoading 
                   ? const Center(child: CircularProgressIndicator())
                   : OutlinedButton.icon(
@@ -267,6 +281,8 @@ class _LoginScreenState extends State<LoginScreen> {
                       onPressed: _signInWithGoogle,
                     ),
                 const SizedBox(height: 24),
+                
+                // This row lets the user flip the `_isLogin` state, instantly transforming the UI from a Login form to a Registration form.
                 Row(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [

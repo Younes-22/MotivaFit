@@ -4,13 +4,13 @@ import '../models/task_model.dart';
 class TaskTile extends StatelessWidget {
   final Task task;
   final ValueChanged<bool?> onChanged;
-  final bool isUpdating; // <--- NEW PARAMETER
+  final bool isUpdating; 
 
   const TaskTile({
     super.key,
     required this.task,
     required this.onChanged,
-    this.isUpdating = false, // Default to false
+    this.isUpdating = false, 
   });
 
   @override
@@ -34,7 +34,7 @@ class TaskTile extends StatelessWidget {
         padding: const EdgeInsets.all(12.0),
         child: Row(
           children: [
-            // --- UPDATED CHECKBOX AREA ---
+            // --- CHECKBOX AREA ---
             SizedBox(
               width: 40,
               height: 40,
@@ -47,7 +47,6 @@ class TaskTile extends StatelessWidget {
                       scale: 1.2,
                       child: Checkbox(
                         value: task.isCompleted,
-                        // If updating, disable the click (set null)
                         onChanged: isUpdating ? null : onChanged, 
                         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(6)),
                         activeColor: colorScheme.primary,
@@ -57,7 +56,7 @@ class TaskTile extends StatelessWidget {
             
             const SizedBox(width: 8),
 
-            // Task Info
+            // --- TASK INFO ---
             Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -92,10 +91,20 @@ class TaskTile extends StatelessWidget {
               ),
             ),
 
-            // Reward Info
+            // --- REWARD INFO ---
             Column(
               crossAxisAlignment: CrossAxisAlignment.end,
               children: [
+                // NEW: Boss Damage Indicator
+                Text(
+                  '⚔️ ${task.xpReward} DMG',
+                  style: TextStyle(
+                    color: task.isCompleted ? Colors.grey : Colors.redAccent,
+                    fontWeight: FontWeight.bold,
+                    fontSize: 13,
+                  ),
+                ),
+                const SizedBox(height: 2),
                 Text(
                   '+${task.coinReward} 🪙',
                   style: TextStyle(

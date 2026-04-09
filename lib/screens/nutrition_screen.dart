@@ -1,4 +1,4 @@
-import 'dart:async'; // NEW: Imported for the Debouncer Timer
+import 'dart:async'; 
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:mobile_scanner/mobile_scanner.dart'; 
@@ -8,6 +8,7 @@ import '../services/firestore_service.dart';
 import '../services/food_service.dart';
 import 'ai_chat_screen.dart';
 
+// The main hub for tracking meals. It handles barcode scanning, searching a public food database, and calculating daily macro goals.
 class NutritionScreen extends StatefulWidget {
   const NutritionScreen({super.key});
 
@@ -18,11 +19,11 @@ class NutritionScreen extends StatefulWidget {
 class _NutritionScreenState extends State<NutritionScreen> {
   final FoodService _foodService = FoodService();
   bool _isSearching = false;
-  Timer? _debounce; // NEW: The Debouncer Timer variable
+  
+  // This timer stops the app from spamming the food database every time the user types a single letter. It waits until they pause typing before searching.
+  Timer? _debounce; 
 
-  // ===========================================================================
-  // 1. BARCODE SCANNING
-  // ===========================================================================
+  // Opens the device camera to look for a barcode. If it finds one, it sends the number to our food database to find the exact product.
   Future<void> _scanBarcode(BuildContext context) async {
     final result = await Navigator.push(
       context,
@@ -67,7 +68,7 @@ class _NutritionScreenState extends State<NutritionScreen> {
     if (result != null && result is String) {
       setState(() => _isSearching = true);
       try {
-        // Added a timeout to the barcode scanner as well to prevent silent hanging
+        // If the public food database is down or slow, we force a timeout after 10 seconds so the user isn't staring at a frozen loading screen forever.
         final food = await _foodService.getFoodByBarcode(result).timeout(
           const Duration(seconds: 10),
           onTimeout: () => throw Exception("Server took too long. Try Manual Entry!"),
@@ -91,9 +92,7 @@ class _NutritionScreenState extends State<NutritionScreen> {
     }
   }
 
-  // ===========================================================================
-  // 2. SEARCH LOGIC
-  // ===========================================================================
+  // Pops up a small search bar where users can type a food name or choose to enter it manually.
   void _showSearchDialog(BuildContext context) {
     final searchController = TextEditingController();
     showDialog(
@@ -141,19 +140,17 @@ class _NutritionScreenState extends State<NutritionScreen> {
     );
   }
 
+  // Reaches out to the public API to find food matching the user's search query.
   void _performSearch(BuildContext context, String query) async {
     if (query.trim().isEmpty) return;
 
-    // --- NEW: Debouncer Logic ---
-    // If the user triggers search multiple times quickly, cancel the previous one
+    // Reset the timer. If they type another letter before 500ms is up, the timer restarts.
     if (_debounce?.isActive ?? false) _debounce!.cancel();
 
     _debounce = Timer(const Duration(milliseconds: 500), () async {
       setState(() => _isSearching = true);
 
       try {
-        // --- NEW: Timeout & Rate Limit Handling ---
-        // Forces the app to throw an error if the public database hangs for > 10 seconds
         final results = await _foodService.searchFood(query).timeout(
           const Duration(seconds: 10),
           onTimeout: () => throw Exception("Server is busy or rate-limiting. Try Manual Entry!"),
@@ -201,7 +198,6 @@ class _NutritionScreenState extends State<NutritionScreen> {
         if (!mounted) return;
         setState(() => _isSearching = false);
         
-        // Clean up the error message for the user
         final errorMsg = e.toString().replaceAll("Exception: ", "");
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text(errorMsg), backgroundColor: Colors.red),
@@ -210,9 +206,7 @@ class _NutritionScreenState extends State<NutritionScreen> {
     });
   }
 
-  // ===========================================================================
-  // 3. LOGGING DIALOGS (Manual & Automatic)
-  // ===========================================================================
+  // A bottom sheet that slides up allowing the user to bypass the database and just type in their own custom meal numbers.
   void _showManualEntryDialog() {
     final nameController = TextEditingController();
     final calController = TextEditingController();
@@ -282,6 +276,7 @@ class _NutritionScreenState extends State<NutritionScreen> {
     );
   }
 
+  // Shows the user the food they found. If they change the serving size (e.g. from 100g to 200g), it automatically multiplies all the macros so they don't have to do the math in their head.
   void _showLogFoodDialog(BuildContext context, {FoodItem? initialFood}) {
     final servingController = TextEditingController(text: '100');
     final calController = TextEditingController(text: initialFood?.calories.toString() ?? '');
@@ -343,6 +338,7 @@ class _NutritionScreenState extends State<NutritionScreen> {
     );
   }
 
+  // Gamification check: if eating this meal pushed the user's XP over the threshold, throw a big celebratory popup! Otherwise, just show a quiet success banner.
   void _handleLoggingOutcome(bool leveledUp) {
     if (leveledUp) {
       showDialog(
@@ -361,9 +357,6 @@ class _NutritionScreenState extends State<NutritionScreen> {
     }
   }
 
-  // ===========================================================================
-  // 4. UI BUILD
-  // ===========================================================================
   void _showEditGoalsDialog(BuildContext context, UserModel user) {
     final calController = TextEditingController(text: user.calorieGoal.toString());
     final protController = TextEditingController(text: user.proteinGoal.toString());
@@ -411,6 +404,7 @@ class _NutritionScreenState extends State<NutritionScreen> {
       appBar: AppBar(
         title: const Text('Nutrition Tracker'),
         actions: [
+          // AI CITATION: The idea to use the 'psychology' icon to represent an AI brain/assistant was generated by AI.
           IconButton(
             icon: const Icon(Icons.psychology, color: Colors.deepPurple),
             tooltip: "Ask AI Nutritionist",
@@ -473,12 +467,13 @@ class _NutritionScreenState extends State<NutritionScreen> {
     );
   }
 
+  // AI CITATION: This entire custom bar chart logic—calculating dates, managing heights with FractionallySizedBox, and stacking containers to avoid relying on external plugins—was generated by AI.
   Widget _buildWeeklyGraph(FirestoreService firestore, int goal, ThemeData theme) {
     return Container(
       height: 200,
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: theme.colorScheme.surfaceVariant.withOpacity(0.3),
+        color: theme.colorScheme.surfaceVariant.withValues(alpha: 0.3),
         borderRadius: BorderRadius.circular(16),
       ),
       child: StreamBuilder<List<NutritionDay>>(
@@ -496,7 +491,7 @@ class _NutritionScreenState extends State<NutritionScreen> {
             bool isToday = i == 0;
             bars.add(Expanded(child: Column(children: [
               Expanded(child: Stack(alignment: Alignment.bottomCenter, children: [
-                Container(width: 12, color: Colors.grey.withOpacity(0.2)),
+                Container(width: 12, color: Colors.grey.withValues(alpha: 0.2)),
                 FractionallySizedBox(heightFactor: percent, child: Container(width: 12, decoration: BoxDecoration(color: isToday ? theme.colorScheme.primary : Colors.grey, borderRadius: BorderRadius.circular(4)))),
               ])),
               const SizedBox(height: 8),
@@ -533,8 +528,9 @@ class _NutritionScreenState extends State<NutritionScreen> {
     );
   }
 
+  // AI CITATION: The layout of these specific macro cards—wrapping a CircularProgressIndicator around a percentage text inside a stacked box—was designed by AI.
   Widget _buildMacroCard(String label, int current, int goal, Color color) {
-    return Expanded(child: Card(color: color.withOpacity(0.1), elevation: 0, child: Padding(padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 8), child: Column(mainAxisSize: MainAxisSize.min, children: [
+    return Expanded(child: Card(color: color.withValues(alpha: 0.1), elevation: 0, child: Padding(padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 8), child: Column(mainAxisSize: MainAxisSize.min, children: [
       Text(label, style: TextStyle(color: color, fontWeight: FontWeight.bold), maxLines: 1, overflow: TextOverflow.ellipsis),
       const SizedBox(height: 8),
       SizedBox(height: 40, width: 40, child: Stack(alignment: Alignment.center, children: [
@@ -545,4 +541,4 @@ class _NutritionScreenState extends State<NutritionScreen> {
       FittedBox(child: Text("$current / ${goal}g", style: const TextStyle(fontSize: 12))),
     ]))));
   }
-}
+} 

@@ -81,25 +81,4 @@ class GamificationService {
     );
   }
 
-  // Validation for creating new tasks
-  String? validateTaskCreation(UserProgress user, List<Task> currentTasks, 
-      TaskDifficulty newDifficulty, TaskPriority newPriority) {
-    
-    if (newDifficulty == TaskDifficulty.hard && 
-        user.currentLevel < GameRules.minLevelForHardTasks) {
-      return "Reach Level ${GameRules.minLevelForHardTasks} to unlock Hard tasks!";
-    }
-
-    if (newPriority == TaskPriority.high) {
-      int existingHighPriority = currentTasks
-          .where((t) => t.priority == TaskPriority.high)
-          .length;
-      
-      if (existingHighPriority >= GameRules.maxHighPriorityTasksPerDay) {
-        return "You can only have ${GameRules.maxHighPriorityTasksPerDay} High Priority tasks per day.";
-      }
-    }
-
-    return null;
-  }
 }

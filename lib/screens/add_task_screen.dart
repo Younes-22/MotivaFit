@@ -1,11 +1,12 @@
 import 'package:flutter/material.dart';
-import 'package:intl/intl.dart'; // Import for date formatting
+import 'package:intl/intl.dart';
 import '../models/task_model.dart';
 import '../services/firestore_service.dart';
 
+// Screen to create a new task
 class AddTaskScreen extends StatefulWidget {
   final String? initialCategory;
-  final DateTime? initialDate; // Allow passing a date
+  final DateTime? initialDate;
 
   const AddTaskScreen({
     super.key, 
@@ -18,20 +19,21 @@ class AddTaskScreen extends StatefulWidget {
 }
 
 class _AddTaskScreenState extends State<AddTaskScreen> {
+  // Form state variables
   final _titleController = TextEditingController();
   TaskDifficulty _difficulty = TaskDifficulty.easy;
   TaskPriority _priority = TaskPriority.normal;
-  late DateTime _selectedDate; // State for date
+  late DateTime _selectedDate;
   bool _isLoading = false;
 
   @override
   void initState() {
     super.initState();
-    // Default to the passed date or Today
+    // This defaults to the passed date or today
     _selectedDate = widget.initialDate ?? DateTime.now();
   }
 
-  // Show the Native Date Picker
+  // Shows the native date picker
   Future<void> _pickDate() async {
     final picked = await showDatePicker(
       context: context,
@@ -46,6 +48,7 @@ class _AddTaskScreenState extends State<AddTaskScreen> {
     }
   }
 
+  // Saves the task to the database and handles the loading spinner
   void _submit() async {
     if (_titleController.text.isEmpty) return;
 
@@ -53,7 +56,7 @@ class _AddTaskScreenState extends State<AddTaskScreen> {
     try {
       await FirestoreService().addTask(
         title: _titleController.text,
-        // Auto-assign the category behind the scenes so the user doesn't have to!
+        // Auto assign the category behind the scenes so the user doesn't need to
         category: widget.initialCategory ?? 'Custom', 
         difficulty: _difficulty,
         priority: _priority,
@@ -77,13 +80,14 @@ class _AddTaskScreenState extends State<AddTaskScreen> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
+              // Task name input
               TextField(
                 controller: _titleController,
                 decoration: const InputDecoration(labelText: 'Task Title', border: OutlineInputBorder()),
               ),
               const SizedBox(height: 16),
               
-              // --- DATE PICKER ROW ---
+              // Date picking row
               InkWell(
                 onTap: _pickDate,
                 borderRadius: BorderRadius.circular(12),
@@ -101,8 +105,7 @@ class _AddTaskScreenState extends State<AddTaskScreen> {
               ),
               const SizedBox(height: 16),
 
-              // --- CATEGORY DROPDOWN REMOVED ---
-
+              // Side by side dropdowns for difficulty and priority
               Row(
                 children: [
                   Expanded(
@@ -125,6 +128,8 @@ class _AddTaskScreenState extends State<AddTaskScreen> {
                 ],
               ),
               const SizedBox(height: 32),
+              
+              // Submit button
               SizedBox(
                 width: double.infinity,
                 height: 50,

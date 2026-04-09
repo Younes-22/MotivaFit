@@ -3,10 +3,12 @@ import '../models/badge_model.dart';
 import '../models/user_model.dart';
 import '../services/firestore_service.dart';
 
+// A gamified achievements screen that displays a grid of all available badges. 
+// It automatically checks the user's profile to determine which badges to light up and which ones to keep locked and hidden.
 class TrophyRoomScreen extends StatelessWidget {
   const TrophyRoomScreen({super.key});
 
-  // Helper method to get the color based on badge rarity
+  // A quick mapping function that returns a specific color based on how hard the badge is to earn (e.g., Legendary badges get a shiny amber color).
   Color _getRarityColor(BadgeRarity rarity) {
     switch (rarity) {
       case BadgeRarity.common:
@@ -18,7 +20,7 @@ class TrophyRoomScreen extends StatelessWidget {
     }
   }
 
-  // Helper method to show badge details in a popup
+  // Pops open a dialog when a user taps on a badge. If they haven't earned it yet, we hide the real name and just show the description as a hint on how to unlock it!
   void _showBadgeDetails(BuildContext context, BadgeModel badge, bool isUnlocked) {
     showDialog(
       context: context,
@@ -57,6 +59,7 @@ class TrophyRoomScreen extends StatelessWidget {
     );
   }
 
+  // The main layout. It grabs the user's data stream so if they earn a badge while on this screen, the grid will instantly update to show their new trophy.
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -80,11 +83,12 @@ class TrophyRoomScreen extends StatelessWidget {
 
           return Column(
             children: [
-              // Header Summary
+              
+              // A summary header at the top so the user always knows their total progress.
               Container(
                 padding: const EdgeInsets.all(20),
                 width: double.infinity,
-                color: Theme.of(context).colorScheme.primary.withOpacity(0.1),
+                color: Theme.of(context).colorScheme.primary.withValues(alpha: 0.1),
                 child: Column(
                   children: [
                     Text(
@@ -98,32 +102,34 @@ class TrophyRoomScreen extends StatelessWidget {
               
               const SizedBox(height: 10),
 
-              // The Badge Grid
+              // Builds a flexible, scrollable grid that perfectly fits 3 badges per row.
               Expanded(
                 child: GridView.builder(
                   padding: const EdgeInsets.all(16),
                   gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                    crossAxisCount: 3, // 3 badges per row
+                    crossAxisCount: 3, 
                     crossAxisSpacing: 15,
                     mainAxisSpacing: 15,
-                    childAspectRatio: 0.8, // Make the cards slightly taller than they are wide
+                    childAspectRatio: 0.8, // Slightly stretches the cards vertically so the text fits nicely
                   ),
                   itemCount: BadgeModel.allBadges.length,
                   itemBuilder: (context, index) {
                     final badge = BadgeModel.allBadges[index];
                     final isUnlocked = earnedBadgeIds.contains(badge.id);
 
+                    // We wrap each badge in a GestureDetector so they act like buttons.
                     return GestureDetector(
                       onTap: () => _showBadgeDetails(context, badge, isUnlocked),
                       child: Container(
+                        // Dynamically sets the background and border color based on rarity and lock status.
                         decoration: BoxDecoration(
                           color: isUnlocked 
-                              ? _getRarityColor(badge.rarity).withOpacity(0.1) 
+                              ? _getRarityColor(badge.rarity).withValues(alpha: 0.1) 
                               : Colors.grey.shade200,
                           borderRadius: BorderRadius.circular(15),
                           border: Border.all(
                             color: isUnlocked 
-                                ? _getRarityColor(badge.rarity).withOpacity(0.5) 
+                                ? _getRarityColor(badge.rarity).withValues(alpha: 0.5) 
                                 : Colors.grey.shade300,
                             width: 2,
                           ),

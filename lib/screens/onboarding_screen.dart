@@ -3,6 +3,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import '../services/firestore_service.dart';
 import 'home_screen.dart'; 
 
+// The welcoming flow for new users. It gathers basic physical stats and lifestyle choices to personalize their MotivaFit experience right out of the gate.
 class OnboardingScreen extends StatefulWidget {
   const OnboardingScreen({super.key});
 
@@ -10,6 +11,7 @@ class OnboardingScreen extends StatefulWidget {
   State<OnboardingScreen> createState() => _OnboardingScreenState();
 }
 
+// Holds all the data the user inputs across the different pages before we finally bundle it up and send it to the database.
 class _OnboardingScreenState extends State<OnboardingScreen> {
   final PageController _pageController = PageController();
   final FirestoreService _firestore = FirestoreService();
@@ -17,7 +19,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
   int _currentPage = 0;
   bool _isLoading = false;
 
-  // --- USER DATA VARIABLES ---
+  // User Data Variables
   String _gender = 'Male';
   double _age = 25;
   double _weight = 70; // kg
@@ -28,15 +30,15 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
 
   final List<String> _dietOptions = ['None', 'Vegan', 'Vegetarian', 'Keto', 'Halal', 'No Nuts', 'Dairy-Free'];
 
-  // --- CALCULATE & SAVE LOGIC ---
+  // Math function. It takes all the user's answers, runs them through the clinical Mifflin-St Jeor equation to find their baseline metabolic rate, adjusts for their goals, and splits the calories into specific macro targets before saving to Firebase.
   Future<void> _finishOnboarding() async {
     setState(() => _isLoading = true);
 
-    // 1. Calculate BMR (Mifflin-St Jeor)
+    // Calculate BMR (Mifflin-St Jeor)
     double bmr = (10 * _weight) + (6.25 * _height) - (5 * _age);
     bmr += (_gender == 'Male') ? 5 : -161;
 
-    // 2. Apply Activity Multiplier
+    // Apply Activity Multiplier
     double multiplier;
     switch (_activityLevel) {
       case 'Sedentary': multiplier = 1.2; break;
@@ -46,24 +48,24 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
     }
     double tdee = bmr * multiplier;
 
-    // 3. Apply Goal Adjustment
+    // Apply Goal Adjustment
     if (_goal == 'Lose Weight') tdee -= 500;
     if (_goal == 'Build Muscle') tdee += 300;
 
     int targetCalories = tdee.round();
 
-    // 4. Calculate Macros (30% Protein, 40% Carbs, 30% Fat)
+    // Calculate Macros (30% Protein, 40% Carbs, 30% Fat)
     int targetProtein = ((targetCalories * 0.30) / 4).round(); 
     int targetCarbs = ((targetCalories * 0.40) / 4).round();   
     int targetFat = ((targetCalories * 0.30) / 9).round();     
 
-    // 5. Create the base profile FIRST using the safe .set() method
+    // Create the base profile FIRST using the safe .set() method
     final user = FirebaseAuth.instance.currentUser;
     if (user != null) {
       await _firestore.createUserProfile(user, 'New Hero');
     }
 
-    // 6. Safely update it with their Onboarding choices
+    // Safely update it with their Onboarding choices
     await _firestore.updateDietaryPreferences(
       restrictions: _selectedRestrictions.contains('None') ? [] : _selectedRestrictions,
       goal: _goal,
@@ -77,13 +79,65 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
     );
 
     if (!mounted) return;
-    
-    // 7. Navigate to Home
-    Navigator.of(context).pushReplacement(
-      MaterialPageRoute(builder: (_) => const HomeScreen()),
+    setState(() => _isLoading = false); // Stop the loading spinner
+
+    showDialog(
+      context: context,
+      barrierDismissible: false, // Force them to click the button to continue
+      builder: (ctx) => AlertDialog(
+        icon: const Icon(Icons.analytics, size: 48, color: Colors.deepPurple),
+        title: const Text('Your Plan is Ready!', textAlign: TextAlign.center),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const Text(
+              "Based on clinical formulas, we've calculated the optimal fuel for your mission:",
+              style: TextStyle(fontSize: 14),
+            ),
+            const SizedBox(height: 16),
+            _buildSummaryRow(Icons.local_fire_department, "Calories", "$targetCalories kcal/day", Colors.orange),
+            _buildSummaryRow(Icons.fitness_center, "Protein", "${targetProtein}g", Colors.blue),
+            _buildSummaryRow(Icons.bakery_dining, "Carbs", "${targetCarbs}g", Colors.amber),
+            _buildSummaryRow(Icons.water_drop, "Fat", "${targetFat}g", Colors.purple),
+          ],
+        ),
+        actions: [
+          SizedBox(
+            width: double.infinity,
+            child: FilledButton(
+              onPressed: () {
+                Navigator.pop(ctx); // Close dialog
+                // Navigate to Home
+                Navigator.of(context).pushReplacement(
+                  MaterialPageRoute(builder: (_) => const HomeScreen()),
+                );
+              },
+              child: const Text("Let's Go!"),
+            ),
+          ),
+        ],
+      ),
     );
   }
 
+  // A clean, reusable UI row to display the final calculated macros in the pop-up dialog.
+  Widget _buildSummaryRow(IconData icon, String label, String value, Color color) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 6.0),
+      child: Row(
+        children: [
+          Icon(icon, color: color, size: 20),
+          const SizedBox(width: 8),
+          Text(label, style: const TextStyle(fontWeight: FontWeight.bold)),
+          const Spacer(),
+          Text(value, style: TextStyle(color: color, fontWeight: FontWeight.bold, fontSize: 16)),
+        ],
+      ),
+    );
+  }
+
+  // Moves the user to the next question in the form, or kicks off the final calculation if they are currently on the last page.
   void _nextPage() {
     if (_currentPage < 3) {
       _pageController.nextPage(duration: const Duration(milliseconds: 300), curve: Curves.easeInOut);
@@ -92,6 +146,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
     }
   }
 
+  // The main scaffold. It shows a progress bar at the top so the user knows how many questions are left, and anchors the main action button at the bottom.
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -136,6 +191,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
     );
   }
 
+  // Page 1: Grabs biological sex and age, which are crucial variables for the BMR calculation.
   Widget _buildBasicStatsPage() {
     return _pageTemplate(
       title: "Who is our hero?",
@@ -162,6 +218,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
     );
   }
 
+  // Page 2: Grabs height and weight using sliders for a more interactive, tap-friendly experience.
   Widget _buildBodyMetricsPage() {
     return _pageTemplate(
       title: "Current Stats",
@@ -170,7 +227,8 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
           Text("Height: ${_height.round()} cm"),
           Slider(
             value: _height,
-            min: 120, max: 220, divisions: 100,
+            // Highly inclusive height range
+            min: 50, max: 250, divisions: 200, 
             label: _height.round().toString(),
             onChanged: (val) => setState(() => _height = val),
           ),
@@ -178,7 +236,8 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
           Text("Weight: ${_weight.round()} kg"),
           Slider(
             value: _weight,
-            min: 40, max: 200, divisions: 160,
+            // Highly inclusive weight range
+            min: 20, max: 300, divisions: 280, 
             label: _weight.round().toString(),
             onChanged: (val) => setState(() => _weight = val),
           ),
@@ -187,6 +246,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
     );
   }
 
+  // Page 3: Determines the activity multiplier and whether we need to add/subtract calories for muscle gain or weight loss.
   Widget _buildLifestylePage() {
     return _pageTemplate(
       title: "The Mission",
@@ -214,6 +274,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
     );
   }
 
+  // Page 4: Lets the user pick multiple dietary restrictions using toggleable chips.
   Widget _buildDietPage() {
     return _pageTemplate(
       title: "Any Dietary Rules?",
@@ -241,6 +302,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
     );
   }
 
+  // A wrapper widget that ensures every question page shares the exact same title styling and spacing.
   Widget _pageTemplate({required String title, required Widget child}) {
     return Padding(
       padding: const EdgeInsets.all(24.0),

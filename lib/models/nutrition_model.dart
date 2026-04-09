@@ -1,7 +1,7 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 
 class NutritionDay {
-  final String id; // Format: "YYYY-MM-DD"
+  final String id; // Format will be in YYYY-MM-DD
   final int calories;
   final int protein;
   final int carbs;
@@ -17,7 +17,7 @@ class NutritionDay {
     required this.date,
   });
 
-  // Calculate generic progress (0.0 to 1.0)
+  // Calculate  progress
   double getCalorieProgress(int goal) {
     if (goal == 0) return 0.0;
     return (calories / goal).clamp(0.0, 1.0);

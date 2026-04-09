@@ -4,7 +4,7 @@ import '../models/user_model.dart';
 import '../services/firestore_service.dart';
 
 class BossBattleCard extends StatelessWidget {
-  final UserModel user; // <--- NEW: Now requires the User data
+  final UserModel user; 
 
   const BossBattleCard({super.key, required this.user});
 
@@ -32,9 +32,10 @@ class BossBattleCard extends StatelessWidget {
         int workoutDmg = user.targetWorkoutsPerWeek > 0 ? (700 / user.targetWorkoutsPerWeek).round() : 0;
         int mealDmg = user.targetWorkoutsPerWeek > 0 ? (300 / 7).round() : (1000 / 7).round();
         
+        // UPDATED: Short, concise, and includes Task XP math
         String hintText = user.targetWorkoutsPerWeek > 0 
-            ? "Deal $workoutDmg DMG per Workout and $mealDmg DMG per Meal!"
-            : "Recovery Mode: Deal $mealDmg DMG per Meal!";
+            ? "Deal $workoutDmg DMG/Workout, $mealDmg DMG/Meal & Task DMG = XP!"
+            : "Recovery: $mealDmg DMG/Meal & Task DMG = XP!";
 
         // VICTORY STATE
         if (boss.isDefeated) {
@@ -181,6 +182,7 @@ class BossBattleCard extends StatelessWidget {
                   child: Text(
                     hintText,
                     style: const TextStyle(color: Colors.white60, fontSize: 13, fontStyle: FontStyle.italic),
+                    textAlign: TextAlign.center, // Added alignment for safety
                   ),
                 ),
               ],

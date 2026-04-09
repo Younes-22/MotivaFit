@@ -3,6 +3,7 @@ import 'package:intl/intl.dart';
 import '../models/workout_model.dart';
 import '../services/firestore_service.dart';
 
+// The main screen for tracking daily fitness. It allows users to log individual exercises or quickly load up their favorite saved routines.
 class WorkoutScreen extends StatefulWidget {
   const WorkoutScreen({super.key});
 
@@ -10,6 +11,7 @@ class WorkoutScreen extends StatefulWidget {
   State<WorkoutScreen> createState() => _WorkoutScreenState();
 }
 
+// Manages the tab navigation between "Today's Log" and "My Plans", and handles all the dialogs for adding new exercises and routines.
 class _WorkoutScreenState extends State<WorkoutScreen> with SingleTickerProviderStateMixin {
   final FirestoreService _firestore = FirestoreService();
   final DateTime _selectedDate = DateTime.now();
@@ -21,9 +23,9 @@ class _WorkoutScreenState extends State<WorkoutScreen> with SingleTickerProvider
     _tabController = TabController(length: 2, vsync: this);
   }
 
-  // --- DIALOGS ---
+  // Dialogs & actions
 
-  // 1. Add Single Exercise (Fixed Validation)
+  // A dual-purpose dialog. If it's called from the "Create Plan" screen, it passes the exercise back to be bundled into the template. Otherwise, it logs it directly to today.
   void _showAddExerciseDialog(BuildContext context, {Function(Exercise)? onAdd}) {
     final nameController = TextEditingController();
     final setsController = TextEditingController();
@@ -59,7 +61,7 @@ class _WorkoutScreenState extends State<WorkoutScreen> with SingleTickerProvider
               final reps = repsController.text.trim();
               final weight = double.tryParse(weightController.text) ?? 0.0;
 
-              // Validation: Only Name and Sets are strictly required to start
+              // Validation: We only strictly require the Name and Sets to prevent empty database entries
               if (name.isNotEmpty && sets > 0) {
                 final ex = Exercise(
                   id: DateTime.now().millisecondsSinceEpoch.toString(),
@@ -70,9 +72,9 @@ class _WorkoutScreenState extends State<WorkoutScreen> with SingleTickerProvider
                 );
 
                 if (onAdd != null) {
-                  onAdd(ex); // For Routine Creator
+                  onAdd(ex); // Send it back to the Routine Creator
                 } else {
-                  _firestore.logExercise( // For Today's Log
+                  _firestore.logExercise( // Save it directly to Today's Log
                     name: name, sets: sets, reps: reps, weight: weight, date: _selectedDate
                   );
                 }
@@ -86,7 +88,7 @@ class _WorkoutScreenState extends State<WorkoutScreen> with SingleTickerProvider
     );
   }
 
-  // 2. Create New Plan Dialog
+  // An interactive builder that lets users bundle multiple exercises into a reusable template (like "Pull Day" or "Leg Day") so they don't have to type them out every week.
   void _showCreatePlanDialog(BuildContext context) {
     final nameController = TextEditingController();
     List<Exercise> tempExercises = [];
@@ -148,8 +150,7 @@ class _WorkoutScreenState extends State<WorkoutScreen> with SingleTickerProvider
     );
   }
 
-  // --- ACTIONS ---
-
+  // Marks today's workout as complete in the database. It then checks if the XP rewarded was enough to push the user to the next level.
   void _finishWorkout(BuildContext context) async {
     bool leveledUp = await _firestore.finishWorkout(_selectedDate);
     if (!context.mounted) return;
@@ -170,6 +171,9 @@ class _WorkoutScreenState extends State<WorkoutScreen> with SingleTickerProvider
     }
   }
 
+  // UI builder
+
+  // The main scaffold that sets up the top navigation tabs, allowing the user to swipe back and forth between their active log and their saved templates.
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -183,16 +187,18 @@ class _WorkoutScreenState extends State<WorkoutScreen> with SingleTickerProvider
       body: TabBarView(
         controller: _tabController,
         children: [
-          // TAB 1: TODAY'S LOG
+          // TAB 1: Today's Log
           _buildTodayTab(),
 
-          // TAB 2: MY PLANS
+          // TAB 2: My Plans
           _buildPlansTab(),
         ],
       ),
     );
   }
 
+  // The active workout view. It seamlessly transitions between three states: 
+  // 1) An empty prompt to start, 2) The active list of exercises, 3) The victory screen.
   Widget _buildTodayTab() {
     return StreamBuilder<WorkoutDay>(
       stream: _firestore.getWorkoutForDate(_selectedDate),
@@ -201,7 +207,7 @@ class _WorkoutScreenState extends State<WorkoutScreen> with SingleTickerProvider
         final workout = snapshot.data!;
         final exercises = workout.exercises;
 
-        // --- 1. COMPLETION STATE ---
+        // Completion State
         // If the workout is finished, hide the list entirely and show the victory graphic!
         if (workout.isCompleted) {
           return Center(
@@ -225,7 +231,7 @@ class _WorkoutScreenState extends State<WorkoutScreen> with SingleTickerProvider
           );
         }
 
-        // --- 2. EMPTY STATE ---
+        // Empty State
         if (exercises.isEmpty) {
           return Center(
             child: Column(
@@ -249,7 +255,7 @@ class _WorkoutScreenState extends State<WorkoutScreen> with SingleTickerProvider
           );
         }
 
-        // --- 3. ACTIVE WORKOUT STATE ---
+        // Active Workout State
         return Column(
           children: [
             Expanded(
@@ -304,6 +310,7 @@ class _WorkoutScreenState extends State<WorkoutScreen> with SingleTickerProvider
     );
   }
 
+  // Displays all the user's saved workout templates. Tapping the green play button instantly copies all the exercises from the template into today's log.
   Widget _buildPlansTab() {
     return StreamBuilder<List<WorkoutRoutine>>(
       stream: _firestore.getRoutines(),
@@ -337,7 +344,7 @@ class _WorkoutScreenState extends State<WorkoutScreen> with SingleTickerProvider
                             tooltip: "Start this workout",
                             onPressed: () {
                               _firestore.loadRoutineIntoToday(routine, _selectedDate);
-                              _tabController.animateTo(0); // Jump to Log tab
+                              _tabController.animateTo(0); // Jump back to the active Log tab
                               ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Plan Loaded!')));
                             },
                           ),

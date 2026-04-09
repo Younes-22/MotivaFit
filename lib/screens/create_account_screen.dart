@@ -3,6 +3,7 @@ import '../services/auth_service.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 
+// Screen for new users to register via email/password or use third-party authentication like Google
 class CreateAccountScreen extends StatefulWidget {
   const CreateAccountScreen({super.key});
 
@@ -18,23 +19,19 @@ class _CreateAccountScreenState extends State<CreateAccountScreen> {
       
   bool _isGoogleLoading = false;
 
+  // Handles the v7 Google Sign-In flow by initialising the singleton, authenticating the user, and passing their ID token directly to Firebase to complete the sign-in
   Future<void> _signInWithGoogle() async {
     setState(() => _isGoogleLoading = true);
     try {
-      // 1. Use the new v7 Singleton instance
       final googleSignIn = GoogleSignIn.instance;
       
-      // 2. Explicit initialization is now required
       await googleSignIn.initialize();
 
-      // 3. authenticate() replaces the old signIn() method
       final GoogleSignInAccount? googleUser = await googleSignIn.authenticate();
 
       if (googleUser != null) {
-        // 4. authentication is now synchronous, no await needed
         final GoogleSignInAuthentication googleAuth = googleUser.authentication;
 
-        // 5. Firebase only needs the idToken!
         final AuthCredential credential = GoogleAuthProvider.credential(
           accessToken: null, 
           idToken: googleAuth.idToken,
@@ -112,6 +109,7 @@ class _CreateAccountScreenState extends State<CreateAccountScreen> {
                 height: 52,
                 child: ElevatedButton(
                   onPressed: () async {
+                    // Validates passwords match before attempting to create the user account
                     if (_passwordController.text !=
                         _confirmPasswordController.text) {
                       ScaffoldMessenger.of(context).showSnackBar(
@@ -137,7 +135,6 @@ class _CreateAccountScreenState extends State<CreateAccountScreen> {
                       ).showSnackBar(SnackBar(content: Text(e.toString())));
                     }
                   },
-
                   style: ElevatedButton.styleFrom(
                     backgroundColor: Colors.blue,
                     shape: RoundedRectangleBorder(
@@ -192,6 +189,7 @@ class _CreateAccountScreenState extends State<CreateAccountScreen> {
     );
   }
 
+  // Helper widget to keep the form UI consistent and avoid repeating padding/decoration code
   Widget _buildInputField({
     required String label,
     required String hint,

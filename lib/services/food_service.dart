@@ -1,10 +1,7 @@
 import 'dart:convert';
 import 'package:http/http.dart' as http;
-import 'package:flutter_dotenv/flutter_dotenv.dart';
 
-// ===========================================================================
-// 1. DATA MODEL (Restored from your original file!)
-// ===========================================================================
+// DATA MODEL 
 class FoodItem {
   final String name;
   final int calories;
@@ -21,75 +18,74 @@ class FoodItem {
   });
 }
 
-// ===========================================================================
-// 2. EDAMAM API ENGINE
-// ===========================================================================
+// SPOONACULAR API ENGINE
 class FoodService {
-  final String _baseUrl = 'https://api.edamam.com/api/food-database/v2/parser';
-  
-  // Grabs your keys safely from the .env file
-  final String _appId = dotenv.env['EDAMAM_APP_ID'] ?? '';
-  final String _appKey = dotenv.env['EDAMAM_APP_KEY'] ?? '';
+  // PASTE YOUR SPOONACULAR API KEY RIGHT HERE:
+  final String _apiKey = '45e4398a5d3e44649f3a2213448b5735';
 
   // --- Search by Name (Text Search) ---
-// --- Search by Name (Text Search) ---
   Future<List<FoodItem>> searchFood(String query) async {
     try {
-      final url = Uri.parse('$_baseUrl?app_id=$_appId&app_key=$_appKey&ingr=${Uri.encodeComponent(query)}');
+      final url = Uri.parse('https://api.spoonacular.com/recipes/complexSearch?query=${Uri.encodeComponent(query)}&addRecipeNutrition=true&number=15&apiKey=$_apiKey');
       final response = await http.get(url);
 
       if (response.statusCode == 200) {
         final data = json.decode(response.body);
-        final List hints = data['hints'] ?? [];
+        final List results = data['results'] ?? [];
         
-        return hints.take(15).map((hint) {
-          final food = hint['food'];
-          final nutrients = food['nutrients'] ?? {};
+        return results.map((item) {
+          final nutrition = item['nutrition'] ?? {};
+          final nutrients = nutrition['nutrients'] as List? ?? [];
+          
+          // Safely grab the exact macro we need from Spoonacular's array
+          int getNutrient(String name) {
+            final nut = nutrients.firstWhere((n) => n['name'] == name, orElse: () => {'amount': 0.0});
+            return (nut['amount'] as num).round();
+          }
+
           return FoodItem(
-            name: food['label'] ?? 'Unknown Food',
-            calories: (nutrients['ENERC_KCAL'] ?? 0).round(),
-            protein: (nutrients['PROCNT'] ?? 0).round(),
-            carbs: (nutrients['CHOCDF'] ?? 0).round(),
-            fat: (nutrients['FAT'] ?? 0).round(),
+            name: item['title'] ?? 'Unknown Food',
+            calories: getNutrient('Calories'),
+            protein: getNutrient('Protein'),
+            carbs: getNutrient('Carbohydrates'),
+            fat: getNutrient('Fat'),
           );
         }).toList();
-      } else {
-        // NEW: Force the app to show the actual server error!
-        throw Exception("Edamam Error ${response.statusCode}: ${response.body}");
       }
+      return [];
     } catch (e) {
-      print("Error searching food: $e");
-      // Pass the real error up to the UI instead of a generic message
-      throw Exception(e.toString()); 
+      throw Exception("Failed to connect to Spoonacular.");
     }
   }
 
   // --- Search by Barcode ---
   Future<FoodItem?> getFoodByBarcode(String barcode) async {
     try {
-      final url = Uri.parse('$_baseUrl?app_id=$_appId&app_key=$_appKey&upc=$barcode');
+      final url = Uri.parse('https://api.spoonacular.com/food/products/upc/$barcode?apiKey=$_apiKey');
       final response = await http.get(url);
 
       if (response.statusCode == 200) {
         final data = json.decode(response.body);
-        final List hints = data['hints'] ?? [];
+        final nutrition = data['nutrition'] ?? {};
         
-        if (hints.isNotEmpty) {
-          final food = hints.first['food'];
-          final nutrients = food['nutrients'] ?? {};
-          return FoodItem(
-            name: food['label'] ?? 'Unknown Product',
-            calories: (nutrients['ENERC_KCAL'] ?? 0).round(),
-            protein: (nutrients['PROCNT'] ?? 0).round(),
-            carbs: (nutrients['CHOCDF'] ?? 0).round(),
-            fat: (nutrients['FAT'] ?? 0).round(),
-          );
+        // Spoonacular barcode returns strings like "4g" for macros, so we strip the 'g'
+        double parseMacro(String? val) {
+          if (val == null) return 0.0;
+          final cleanVal = val.replaceAll(RegExp(r'[^0-9.]'), '');
+          return double.tryParse(cleanVal) ?? 0.0;
         }
+
+        return FoodItem(
+          name: data['title'] ?? 'Unknown Product',
+          calories: (nutrition['calories'] ?? 0).round(),
+          protein: parseMacro(nutrition['protein']).round(),
+          carbs: parseMacro(nutrition['carbs']).round(),
+          fat: parseMacro(nutrition['fat']).round(),
+        );
       }
       return null; 
     } catch (e) {
-      print("Error scanning barcode: $e");
-      throw Exception("Could not find barcode. Try manual entry.");
+      throw Exception("Barcode not found in database.");
     }
   }
 }

@@ -4,6 +4,7 @@ import '../services/auth_service.dart';
 import '../services/firestore_service.dart';
 import '../services/pdf_service.dart';
 
+// The central hub for user preferences. This screen allows the user to tweak their app theme, update their dietary goals, export their data, and log out.
 class SettingsScreen extends StatefulWidget {
   const SettingsScreen({super.key});
 
@@ -11,10 +12,12 @@ class SettingsScreen extends StatefulWidget {
   State<SettingsScreen> createState() => _SettingsScreenState();
 }
 
+// Holds the active state for the Settings screen, including the text controllers and the preset lists used in the dropdowns and dialogs.
 class _SettingsScreenState extends State<SettingsScreen> {
   final PdfService _pdfService = PdfService();
   final TextEditingController _customController = TextEditingController();
 
+  // A handy list of common diets and allergies so the user can just tap what they need instead of typing it out manually every time.
   final List<String> _presetRestrictions = [
     'Halal', 'Vegan', 'Vegetarian', 'Pescetarian', 
     'Gluten-Free', 'Dairy-Free', 'Keto', 'No Nuts',
@@ -22,13 +25,13 @@ class _SettingsScreenState extends State<SettingsScreen> {
 
   final List<String> _goals = ['Lose Weight', 'Maintain', 'Build Muscle'];
 
-  // --- ACTIONS ---
-
+  // Completely clears the current user's active session and safely kicks them all the way back to the main Login/Sign Up screen.
   void _handleLogout() {
     AuthService().signOut();
     Navigator.of(context).popUntil((route) => route.isFirst);
   }
 
+  // Tells the PDF service to start building the weekly progress report. It throws up a snackbar so the user knows it's working in the background.
   Future<void> _handleExportReport() async {
     ScaffoldMessenger.of(context).showSnackBar(
       const SnackBar(content: Text('Generating PDF Report... please wait.')),
@@ -44,8 +47,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
     }
   }
 
-  // --- UI BUILDER ---
-
+  // The main layout. We wrap the whole body in a StreamBuilder so if the user changes a setting, the UI instantly reacts without needing a page refresh.
   @override
   Widget build(BuildContext context) {
     final firestore = FirestoreService();
@@ -60,27 +62,65 @@ class _SettingsScreenState extends State<SettingsScreen> {
           final user = snapshot.data!;
           List<String> userRestrictions = List.from(user.dietaryRestrictions);
           
-          // Determine if dark mode is active based on the exact Firestore ID
-          bool isDarkModeEnabled = user.selectedThemeId == 'theme_dark';
+          // Checks what theme the user currently has active in the database. If they bought a special theme from the shop, we  default the dropdown to 'custom'.
+          String themeValue;
+          if (['system', 'default'].contains(user.selectedThemeId)) {
+            themeValue = 'system';
+          } else if (user.selectedThemeId == 'theme_light') {
+            themeValue = 'theme_light';
+          } else if (user.selectedThemeId == 'theme_dark') {
+            themeValue = 'theme_dark';
+          } else {
+            themeValue = 'custom';
+          }
 
           return ListView(
             children: [
               const SizedBox(height: 20),
               
-              // --- SECTION: APPEARANCE ---
+              // Apperance section
               _buildSectionHeader('Appearance'),
-              SwitchListTile(
-                title: const Text('Dark Mode'),
-                secondary: const Icon(Icons.dark_mode),
-                value: isDarkModeEnabled,
-                onChanged: (val) {
-                  // Save the exact ID to Firestore so AppThemes recognizes it
-                  firestore.equipTheme(val ? 'theme_dark' : 'default');
-                },
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 16.0),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const Text("App Theme", style: TextStyle(fontSize: 14, color: Colors.grey)),
+                    const SizedBox(height: 8),
+                    DropdownButtonFormField<String>(
+                      value: themeValue,
+                      items: [
+                        const DropdownMenuItem(value: 'system', child: Text('📱 System Default')),
+                        const DropdownMenuItem(value: 'theme_light', child: Text('☀️ Light Mode')),
+                        const DropdownMenuItem(value: 'theme_dark', child: Text('🌙 Dark Mode')),
+                        if (themeValue == 'custom')
+                          const DropdownMenuItem(value: 'custom', child: Text('✨ Custom Theme Equipped')),
+                      ],
+                      onChanged: (newTheme) {
+                        if (newTheme != null && newTheme != 'custom') {
+                          firestore.equipTheme(newTheme);
+                        }
+                      },
+                      decoration: InputDecoration(
+                        contentPadding: const EdgeInsets.symmetric(horizontal: 12),
+                        border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
+                      ),
+                    ),
+                    if (themeValue == 'custom')
+                      const Padding(
+                        padding: EdgeInsets.only(top: 8.0, left: 4.0),
+                        child: Text(
+                          'Select a standard theme to unequip your shop theme.',
+                          style: TextStyle(fontSize: 12, color: Colors.grey),
+                        ),
+                      ),
+                  ],
+                ),
               ),
+              const SizedBox(height: 8),
               const Divider(),
 
-              // --- SECTION: FITNESS & DIET ---
+              // Fitness & diet section
               _buildSectionHeader('Fitness & Diet'),
               Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 16.0),
@@ -105,6 +145,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
                     const SizedBox(height: 16),
                     const Text("Dietary Restrictions & Allergies", style: TextStyle(fontSize: 14, color: Colors.grey)),
                     const SizedBox(height: 8),
+                    
+                    // Creates a wrap of chips. Users can easily tap the 'x' on an existing restriction to remove it, or tap 'Add New' to pop open the dialog.
                     Wrap(
                       spacing: 8,
                       children: [
@@ -127,7 +169,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
               ),
               const Divider(),
 
-              // --- SECTION: DATA & REPORTS ---
+              // Report and data section
               _buildSectionHeader('Data & Reports'),
               ListTile(
                 leading: const Icon(Icons.picture_as_pdf, color: Colors.red),
@@ -138,14 +180,14 @@ class _SettingsScreenState extends State<SettingsScreen> {
               ),
               const Divider(),
 
-              // --- SECTION: ACCOUNT ---
+              // Account section
               _buildSectionHeader('Account'),
               ListTile(
                 leading: const Icon(Icons.logout, color: Colors.red),
                 title: const Text('Log Out', style: TextStyle(color: Colors.red)),
                 onTap: _handleLogout,
               ),
-              const SizedBox(height: 24), // Extra padding at the bottom
+              const SizedBox(height: 24), 
             ],
           );
         },
@@ -153,6 +195,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
     );
   }
 
+  // Pops open a dialog that dynamically shows the preset restrictions the user hasn't picked yet, while also giving them a text field to type something completely custom.
   void _showAddCustomRestriction(BuildContext context, List<String> current, String goal, FirestoreService firestore) {
     showDialog(
       context: context,
@@ -199,6 +242,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
     );
   }
 
+  // A tiny helper widget that ensures all the section titles (Appearance, Account, etc.) look uniform and have the exact same spacing without repeating code.
   Widget _buildSectionHeader(String title) {
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
