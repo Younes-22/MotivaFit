@@ -2,9 +2,7 @@ import 'dart:convert';
 import 'package:http/http.dart' as http;
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 
-// A simple blueprint for holding food data. By packaging the name and macros 
-// into this single object, it makes it incredibly easy to pass meal data 
-// around between different screens in the app without getting numbers mixed up.
+// A simple blueprint for holding food data. By packaging the name and macros into this single object, it makes it incredibly easy to pass meal data around between different screens in the app without getting numbers mixed up.
 class FoodItem {
   final String name;
   final int calories;
@@ -21,81 +19,81 @@ class FoodItem {
   });
 }
 
-// The engine that connects the app to the massive Edamam food database. 
-// It handles formatting our requests and translating their clinical nutrient codes 
-// into simple numbers our app can understand.
+// The engine that connects the app to the massive Spoonacular food database. It handles formatting our requests and cleaning up the raw data that comes back.
 class FoodService {
-  // Pulling credentials securely from the hidden .env file
-  static final String _appId = dotenv.env['EDAMAM_APP_ID'] ?? '';
-  static final String _appKey = dotenv.env['EDAMAM_APP_KEY'] ?? '';
+  // Pulling the credentials securely from the hidden .env file
+  static final String _apiKey = dotenv.env['SPOONACULAR_API_KEY'] ?? '';
 
-  // Takes whatever the user typed into the search bar, safely encodes it for the web, 
-  // and asks Edamam for a list of matching foods.
+  // Takes whatever the user typed into the search bar, safely encodes it for the web, and asks Spoonacular for the top 15 matches along with their exact nutritional breakdown.
   Future<List<FoodItem>> searchFood(String query) async {
-    if (_appId.isEmpty || _appKey.isEmpty) {
-      throw Exception("API keys missing from .env file");
+    if (_apiKey.isEmpty) {
+      throw Exception("API key missing from .env file");
     }
 
     try {
-      final url = Uri.parse('https://api.edamam.com/api/food-database/v2/parser?app_id=$_appId&app_key=$_appKey&ingr=${Uri.encodeComponent(query)}');
+      final url = Uri.parse('https://api.spoonacular.com/recipes/complexSearch?query=${Uri.encodeComponent(query)}&addRecipeNutrition=true&number=15&apiKey=$_apiKey');
       final response = await http.get(url);
 
       if (response.statusCode == 200) {
         final data = json.decode(response.body);
+        final List results = data['results'] ?? [];
         
-        // Edamam stores search results inside an array called 'hints'
-        final List hints = data['hints'] ?? [];
-        
-        return hints.map((hint) {
-          final food = hint['food'] ?? {};
-          final nutrients = food['nutrients'] ?? {};
+        return results.map((item) {
+          final nutrition = item['nutrition'] ?? {};
+          final nutrients = nutrition['nutrients'] as List? ?? [];
           
+          // Spoonacular returns a giant, unpredictable list of every nutrient imaginable. 
+          // This helper safely digs through that list to find only the specific macro we want.
+          int getNutrient(String name) {
+            final nut = nutrients.firstWhere((n) => n['name'] == name, orElse: () => {'amount': 0.0});
+            return (nut['amount'] as num).round();
+          }
+
           return FoodItem(
-            name: food['label'] ?? 'Unknown Food',
-            // Edamam uses specific codes for macros: ENERC_KCAL = Calories, PROCNT = Protein, CHOCDF = Carbs, FAT = Fat
-            calories: (nutrients['ENERC_KCAL'] ?? 0).round(),
-            protein: (nutrients['PROCNT'] ?? 0).round(),
-            carbs: (nutrients['CHOCDF'] ?? 0).round(),
-            fat: (nutrients['FAT'] ?? 0).round(),
+            name: item['title'] ?? 'Unknown Food',
+            calories: getNutrient('Calories'),
+            protein: getNutrient('Protein'),
+            carbs: getNutrient('Carbohydrates'),
+            fat: getNutrient('Fat'),
           );
         }).toList();
       }
       return [];
     } catch (e) {
-      throw Exception("Failed to connect to Edamam database.");
+      throw Exception("Failed to connect to Spoonacular.");
     }
   }
 
-  // Pings the Edamam database specifically looking for a UPC barcode match.
+  // Pings a completely different Spoonacular database built specifically for store-bought products. It takes the raw barcode number and returns the exact grocery item.
   Future<FoodItem?> getFoodByBarcode(String barcode) async {
-    if (_appId.isEmpty || _appKey.isEmpty) {
-      throw Exception("API keys missing from .env file");
+    if (_apiKey.isEmpty) {
+      throw Exception("API key missing from .env file");
     }
 
     try {
-      // The endpoint is the exact same as a text search, we just swap 'ingr=' for 'upc='
-      final url = Uri.parse('https://api.edamam.com/api/food-database/v2/parser?app_id=$_appId&app_key=$_appKey&upc=$barcode');
+      final url = Uri.parse('https://api.spoonacular.com/food/products/upc/$barcode?apiKey=$_apiKey');
       final response = await http.get(url);
 
       if (response.statusCode == 200) {
         final data = json.decode(response.body);
-        final List hints = data['hints'] ?? [];
+        final nutrition = data['nutrition'] ?? {};
         
-        // If the barcode matches something, Edamam will return it as the first item in the hints array
-        if (hints.isNotEmpty) {
-          final food = hints.first['food'] ?? {};
-          final nutrients = food['nutrients'] ?? {};
-          
-          return FoodItem(
-            name: food['label'] ?? 'Unknown Product',
-            calories: (nutrients['ENERC_KCAL'] ?? 0).round(),
-            protein: (nutrients['PROCNT'] ?? 0).round(),
-            carbs: (nutrients['CHOCDF'] ?? 0).round(),
-            fat: (nutrients['FAT'] ?? 0).round(),
-          );
+        // The barcode database returns macros as text strings (like "14g" or "5mg") instead of raw numbers. This helper strips out all the letters so our math doesn't break.
+        double parseMacro(String? val) {
+          if (val == null) return 0.0;
+          final cleanVal = val.replaceAll(RegExp(r'[^0-9.]'), '');
+          return double.tryParse(cleanVal) ?? 0.0;
         }
+
+        return FoodItem(
+          name: data['title'] ?? 'Unknown Product',
+          calories: (nutrition['calories'] ?? 0).round(),
+          protein: parseMacro(nutrition['protein']).round(),
+          carbs: parseMacro(nutrition['carbs']).round(),
+          fat: parseMacro(nutrition['fat']).round(),
+        );
       }
-      return null; // Return null if the barcode isn't in their system yet
+      return null; 
     } catch (e) {
       throw Exception("Barcode not found in database.");
     }
