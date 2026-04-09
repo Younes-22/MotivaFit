@@ -12,6 +12,7 @@ import 'screens/login_screen.dart';
 import 'screens/home_screen.dart';
 import 'screens/onboarding_screen.dart'; 
 
+// The ignition switch for the entire app. It ensures Flutter is ready, locks the screen so it doesn't rotate sideways, boots up Firebase, and loads our hidden API keys before finally running the UI.
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await SystemChrome.setPreferredOrientations([
@@ -25,6 +26,7 @@ void main() async {
   runApp(const MotivafitApp());
 }
 
+// The root widget of the app. By wrapping our MaterialApp in a StreamBuilder connected to the database, the split-second a user equips a new theme from the shop, this widget forces every single screen in the app to repaint instantly.
 class MotivafitApp extends StatelessWidget {
   const MotivafitApp({super.key});
 
@@ -35,6 +37,7 @@ class MotivafitApp extends StatelessWidget {
       builder: (context, snapshot) {
         String activeThemeId = 'default';
 
+        // If the user is logged in and their profile loads, grab their chosen theme
         if (snapshot.hasData) {
           activeThemeId = snapshot.data!.selectedThemeId;
         }
@@ -43,6 +46,7 @@ class MotivafitApp extends StatelessWidget {
         ThemeData appDarkTheme;
         ThemeMode currentThemeMode;
 
+        // Logic to gracefully handle the standard Apple/Android system settings, manual light/dark toggles, OR completely custom shop themes.
         if (activeThemeId == 'default' || activeThemeId == 'system') {
           appTheme = AppThemes.getTheme('default');
           appDarkTheme = AppThemes.getTheme('theme_dark');
@@ -59,6 +63,7 @@ class MotivafitApp extends StatelessWidget {
           currentThemeMode = ThemeMode.dark;
         } 
         else {
+          // If they have a custom shop theme equipped, we force both light and dark to use the custom colors so their phone settings don't override their purchase.
           appTheme = AppThemes.getTheme(activeThemeId);
           appDarkTheme = AppThemes.getTheme(activeThemeId);
           currentThemeMode = ThemeMode.light; 
@@ -70,6 +75,7 @@ class MotivafitApp extends StatelessWidget {
           theme: appTheme,
           darkTheme: appDarkTheme,
           themeMode: currentThemeMode,
+          // Instead of a hardcoded starting screen, we hand control to the Traffic Cop
           home: const AuthWrapper(),
         );
       },
@@ -77,6 +83,8 @@ class MotivafitApp extends StatelessWidget {
   }
 }
 
+// The app's Traffic Cop. It sits at the very front door and checks every user's ID. 
+// It silently routes them to the Login Screen, the Onboarding Setup, or the home dashboard depending on their exact account state.
 class AuthWrapper extends StatelessWidget {
   const AuthWrapper({super.key});
 
@@ -85,12 +93,14 @@ class AuthWrapper extends StatelessWidget {
     return StreamBuilder<User?>(
       stream: FirebaseAuth.instance.authStateChanges(),
       builder: (context, authSnapshot) {
+        // Still checking Firebase to see if they are logged in...
         if (authSnapshot.connectionState == ConnectionState.waiting) {
           return const Scaffold(body: Center(child: CircularProgressIndicator()));
         }
 
         final user = authSnapshot.data;
 
+        // If they have a valid login session
         if (user != null) {
           return FutureBuilder<DocumentSnapshot>(
             future: FirebaseFirestore.instance.collection('users').doc(user.uid).get(),
@@ -99,15 +109,18 @@ class AuthWrapper extends StatelessWidget {
                 return const Scaffold(body: Center(child: CircularProgressIndicator()));
               }
 
+              // and they have finished creating their profile, send them Home.
               if (docSnapshot.hasData && docSnapshot.data!.exists) {
                 return const HomeScreen();
               } else {
+                // but if their database profile doesn't exist yet, force them to Onboarding.
                 return const OnboardingScreen();
               }
             },
           );
         }
 
+        // If they have no active session at all, kick them to the Login Screen.
         return const LoginScreen();
       },
     );

@@ -1,10 +1,13 @@
 import 'package:flutter/material.dart';
 
+// The app's digital wardrobe! This class holds all the different visual styles (colors, fonts, and shapes) that users can equip from the shop or settings.
 class AppThemes {
+  
+  // Takes the string ID saved in the user's database (like 'theme_neon') and returns the actual colors and shapes to paint the screen.
   static ThemeData getTheme(String themeId) {
     switch (themeId) {
       
-      // --- 1. DARK MODE ---
+      // Dark mode
       case 'theme_dark':
         return ThemeData(
           brightness: Brightness.dark,
@@ -14,13 +17,13 @@ class AppThemes {
             backgroundColor: Color(0xFF1E1E1E),
             foregroundColor: Colors.white,
           ),
-          // FIXED: Changed CardTheme to CardThemeData
           cardTheme: const CardThemeData(
             color: Color(0xFF1E1E1E),
           ),
         );
 
-      // --- 2. NEON NIGHT ---
+      // Neon Night
+      // A premium shop theme. It uses deep space blues mixed with glowing cyan buttons and hot pink borders around the cards.
       case 'theme_neon':
         return ThemeData(
           brightness: Brightness.dark,
@@ -30,7 +33,6 @@ class AppThemes {
             backgroundColor: Color(0xFF0B0B1A),
             foregroundColor: Colors.cyanAccent,
           ),
-          // FIXED: Changed CardTheme to CardThemeData
           cardTheme: CardThemeData(
             color: const Color(0xFF16162C),
             shape: RoundedRectangleBorder(
@@ -46,7 +48,8 @@ class AppThemes {
           ),
         );
 
-      // --- 3. RETRO ARCADE ---
+      // Retro Arcade
+      // A premium shop theme. It strips away the modern rounded corners for harsh, blocky borders and uses a classic typewriter font.
       case 'theme_retro':
         return ThemeData(
           brightness: Brightness.light,
@@ -56,7 +59,6 @@ class AppThemes {
             backgroundColor: Colors.deepOrange,
             foregroundColor: Colors.white,
           ),
-          
           cardTheme: CardThemeData(
             color: Colors.white,
             shape: RoundedRectangleBorder(
@@ -67,7 +69,8 @@ class AppThemes {
           fontFamily: 'Courier', 
         );
 
-      // --- 4. DEFAULT MOTIVAFIT THEME ---
+      // Default MOTIVAFIT Theme
+      // The classic, clean, deep purple look every new user starts with.
       case 'default':
       default:
         return ThemeData(

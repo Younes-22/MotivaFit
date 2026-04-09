@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 
+// A visual scoreboard that sits at the top of the home screen.
+// It displays the user's current level, progress to the next level, and their total coin balance.
 class ProgressCard extends StatelessWidget {
   final int level;
   final int currentXP;
@@ -21,29 +23,30 @@ class ProgressCard extends StatelessWidget {
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
 
-    // --- Avatar Visual Logic ---
+    // Avatar visual logic
+    // Maps the string ID saved in the database to a specific Flutter icon and color.
     IconData avatarIcon;
     Color avatarColor;
 
     switch (selectedAvatarId) {
       case 'avatar_novice': 
-        avatarIcon = Icons.face; // Restored your original design
+        avatarIcon = Icons.face;
         avatarColor = Colors.greenAccent; 
         break;
       case 'avatar_blue':
-        avatarIcon = Icons.shield; // Restored your original design
+        avatarIcon = Icons.shield;
         avatarColor = Colors.blue; 
         break;
-      case 'avatar_fire': // 🔥 NEW: The Crimson Firebender
+      case 'avatar_fire': 
         avatarIcon = Icons.local_fire_department;
         avatarColor = Colors.orange;
         break;
       case 'avatar_shadow_ninja':
-        avatarIcon = Icons.sports_martial_arts; // Restored your original design
+        avatarIcon = Icons.sports_martial_arts;
         avatarColor = Colors.deepPurpleAccent; 
         break;
       case 'avatar_red_knight':
-        avatarIcon = Icons.security; // Restored your original design
+        avatarIcon = Icons.security;
         avatarColor = Colors.redAccent; 
         break;
       case 'default':
@@ -71,25 +74,26 @@ class ProgressCard extends StatelessWidget {
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                // Left Side: Avatar + Level Info
+                
+                // Left Side: Avatar and Level Info
                 Row(
                   children: [
-                    // --- Avatar Circle ---
+                    // Avatar circle
                     CircleAvatar(
                       radius: 24,
-                      backgroundColor: Colors.black26, // Restored your original background
+                      backgroundColor: Colors.black26, 
                       child: Icon(avatarIcon, color: avatarColor, size: 28),
                     ),
                     const SizedBox(width: 12),
                     
-                    // --- Level Info ---
+                    // Level info
                     Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text(
                           'LEVEL $level',
                           style: theme.textTheme.labelLarge?.copyWith(
-                            color: colorScheme.onPrimary.withOpacity(0.9),
+                            color: colorScheme.onPrimary.withValues(alpha: 0.9),
                             fontWeight: FontWeight.bold,
                             letterSpacing: 1.2,
                           ),
@@ -98,7 +102,7 @@ class ProgressCard extends StatelessWidget {
                         Text(
                           '$currentXP / 500 XP',
                           style: theme.textTheme.bodySmall?.copyWith(
-                            color: colorScheme.onPrimary.withOpacity(0.8),
+                            color: colorScheme.onPrimary.withValues(alpha: 0.8),
                           ),
                         ),
                       ],
@@ -110,7 +114,7 @@ class ProgressCard extends StatelessWidget {
                 Container(
                   padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
                   decoration: BoxDecoration(
-                    color: Colors.black.withOpacity(0.2),
+                    color: Colors.black.withValues(alpha: 0.2),
                     borderRadius: BorderRadius.circular(12),
                   ),
                   child: Row(
@@ -132,13 +136,13 @@ class ProgressCard extends StatelessWidget {
             ),
             const SizedBox(height: 20),
             
-            // Progress Bar
+            // The XP Progress Bar
             ClipRRect(
               borderRadius: BorderRadius.circular(8),
               child: LinearProgressIndicator(
                 value: progress,
                 minHeight: 12,
-                backgroundColor: Colors.black.withOpacity(0.1),
+                backgroundColor: Colors.black.withValues(alpha: 0.1),
                 color: Colors.amber,
               ),
             ),

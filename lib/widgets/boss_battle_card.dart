@@ -3,6 +3,7 @@ import '../models/boss_model.dart';
 import '../models/user_model.dart';
 import '../services/firestore_service.dart';
 
+// A dynamic UI widget that sits on the Home Screen. It acts as a live scoreboard for the weekly Boss Battle, updating in real-time as the user logs tasks and deals damage.
 class BossBattleCard extends StatelessWidget {
   final UserModel user; 
 
@@ -10,6 +11,7 @@ class BossBattleCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    // We wrap the entire card in a StreamBuilder. If the user logs a meal, the database updates, and this card instantly repaints to show the boss's health dropping.
     return StreamBuilder<BossModel?>(
       stream: FirestoreService().getCurrentBossStream(),
       builder: (context, snapshot) {
@@ -19,6 +21,7 @@ class BossBattleCard extends StatelessWidget {
 
         final boss = snapshot.data;
 
+        // If it's Sunday night and the old boss is gone but the new one hasn't spawned yet, we just shrink the card so it disappears completely.
         if (boss == null) {
           return const SizedBox.shrink();
         }
@@ -27,17 +30,18 @@ class BossBattleCard extends StatelessWidget {
         
         int daysLeft = boss.endDate.difference(DateTime.now()).inDays;
         if (daysLeft < 0) daysLeft = 0;
-
-        // CALCULATE DYNAMIC HINT TEXT
+        
+        // Calculate dynamic hint text
+        // We look at the user's specific weekly goals to tell them exactly how much damage their specific actions will do. This ensures a sedentary user playing for recovery can still defeat the boss purely through nutrition and tasks.
         int workoutDmg = user.targetWorkoutsPerWeek > 0 ? (700 / user.targetWorkoutsPerWeek).round() : 0;
         int mealDmg = user.targetWorkoutsPerWeek > 0 ? (300 / 7).round() : (1000 / 7).round();
         
-        // UPDATED: Short, concise, and includes Task XP math
         String hintText = user.targetWorkoutsPerWeek > 0 
             ? "Deal $workoutDmg DMG/Workout, $mealDmg DMG/Meal & Task DMG = XP!"
             : "Recovery: $mealDmg DMG/Meal & Task DMG = XP!";
 
-        // VICTORY STATE
+        // Victory state
+        // Once the boss hits 0 HP, we swap out the intimidating red gradient for a celebratory gold card until Monday rolls around.
         if (boss.isDefeated) {
           return Card(
             elevation: 4,
@@ -74,7 +78,7 @@ class BossBattleCard extends StatelessWidget {
           );
         }
 
-        // ACTIVE BOSS STATE
+        // Active boss state
         return Card(
           elevation: 6,
           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
@@ -91,6 +95,8 @@ class BossBattleCard extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
+                
+                // The Boss Name & Countdown Timer
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
@@ -107,7 +113,7 @@ class BossBattleCard extends StatelessWidget {
                     Container(
                       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
                       decoration: BoxDecoration(
-                        color: Colors.white.withOpacity(0.2),
+                        color: Colors.white.withValues(alpha: 0.2), // Updated to modern syntax!
                         borderRadius: BorderRadius.circular(12),
                       ),
                       child: Row(
@@ -126,6 +132,7 @@ class BossBattleCard extends StatelessWidget {
                 
                 const SizedBox(height: 20),
                 
+                // The Boss Avatar & Raw HP Numbers
                 Row(
                   children: [
                     Container(
@@ -163,6 +170,7 @@ class BossBattleCard extends StatelessWidget {
                 
                 const SizedBox(height: 20),
 
+                // The Health Bar. It dynamically changes color from Green to Orange to Red as the boss's health gets low.
                 ClipRRect(
                   borderRadius: BorderRadius.circular(10),
                   child: LinearProgressIndicator(
@@ -177,12 +185,12 @@ class BossBattleCard extends StatelessWidget {
                 
                 const SizedBox(height: 10),
                 
-                // --- DYNAMIC HINT TEXT USED HERE ---
+                // The strategy guide letting the user know exactly how to deal damage
                 Center(
                   child: Text(
                     hintText,
                     style: const TextStyle(color: Colors.white60, fontSize: 13, fontStyle: FontStyle.italic),
-                    textAlign: TextAlign.center, // Added alignment for safety
+                    textAlign: TextAlign.center, 
                   ),
                 ),
               ],

@@ -1,9 +1,13 @@
 import 'package:flutter/material.dart';
 import '../models/task_model.dart';
 
+// A reusable UI component that displays a single task. It handles its own layout for the checkbox, priority badges, and the expected gamification rewards.
 class TaskTile extends StatelessWidget {
   final Task task;
   final ValueChanged<bool?> onChanged;
+  
+  // A flag to determine if we should show a loading spinner instead of the checkbox.
+  // This locks-in the UI while the database processes the XP and coin math.
   final bool isUpdating; 
 
   const TaskTile({
@@ -17,6 +21,7 @@ class TaskTile extends StatelessWidget {
   Widget build(BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
 
+    // Dynamically sets the tag color based on the task priority.
     Color getPriorityColor() {
       switch (task.priority) {
         case TaskPriority.high: return colorScheme.error;
@@ -28,13 +33,14 @@ class TaskTile extends StatelessWidget {
     return Card(
       margin: const EdgeInsets.only(bottom: 12),
       elevation: 0,
-      color: colorScheme.surfaceContainerHighest.withOpacity(0.5),
+      color: colorScheme.surfaceContainerHighest.withValues(alpha: 0.5),
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
       child: Padding(
         padding: const EdgeInsets.all(12.0),
         child: Row(
           children: [
-            // --- CHECKBOX AREA ---
+            
+            // Check Area
             SizedBox(
               width: 40,
               height: 40,
@@ -56,7 +62,8 @@ class TaskTile extends StatelessWidget {
             
             const SizedBox(width: 8),
 
-            // --- TASK INFO ---
+            // Task Info
+            // Displays the title and the difficulty/priority tags.
             Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -76,13 +83,13 @@ class TaskTile extends StatelessWidget {
                     children: [
                       _buildBadge(
                         task.difficulty.name.toUpperCase(),
-                        Colors.blueGrey.withOpacity(0.2),
+                        Colors.blueGrey.withValues(alpha: 0.2),
                         Colors.blueGrey,
                       ),
                       if (task.priority != TaskPriority.normal)
                         _buildBadge(
                           task.priority.name.toUpperCase(),
-                          getPriorityColor().withOpacity(0.1),
+                          getPriorityColor().withValues(alpha: 0.1),
                           getPriorityColor(),
                         ),
                     ],
@@ -91,11 +98,11 @@ class TaskTile extends StatelessWidget {
               ),
             ),
 
-            // --- REWARD INFO ---
+            // Reward info
+            // Shows the user exactly what they earn upon completion.
             Column(
               crossAxisAlignment: CrossAxisAlignment.end,
               children: [
-                // NEW: Boss Damage Indicator
                 Text(
                   '⚔️ ${task.xpReward} DMG',
                   style: TextStyle(
@@ -127,13 +134,14 @@ class TaskTile extends StatelessWidget {
     );
   }
 
+  // A small helper widget to draw the uniform tags under the task title.
   Widget _buildBadge(String text, Color bg, Color fg) {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
       decoration: BoxDecoration(
         color: bg,
         borderRadius: BorderRadius.circular(4),
-        border: Border.all(color: fg.withOpacity(0.3)),
+        border: Border.all(color: fg.withValues(alpha: 0.3)),
       ),
       child: Text(
         text,

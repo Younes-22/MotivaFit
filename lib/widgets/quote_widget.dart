@@ -1,9 +1,11 @@
 import 'package:flutter/material.dart';
 
+// A lightweight widget that displays a motivational quote. 
+// It automatically rotates to a new quote every 24 hours.
 class QuoteWidget extends StatelessWidget {
   const QuoteWidget({super.key});
 
-  // A list of fitness & productivity quotes
+  // A hardcoded list of fitness and productivity quotes.
   static const List<String> _quotes = [
     "The only bad workout is the one that didn't happen.",
     "Action is the foundational key to all success.",
@@ -24,10 +26,12 @@ class QuoteWidget extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // Logic to pick a quote based on the current day of the year
-    // This ensures everyone sees the same quote for 24 hours
-    final dayOfYear = int.parse("${DateTime.now().year}${DateTime.now().day}"); 
-    final quoteIndex = dayOfYear % _quotes.length;
+    // Logic to pick a quote based on the current date.
+    // By combining the year, month, and day into a single number, we guarantee the math returns the exact same quote all day long.
+    final now = DateTime.now();
+    final dateString = "${now.year}${now.month}${now.day}"; 
+    final dayNumber = int.parse(dateString); 
+    final quoteIndex = dayNumber % _quotes.length;
     final quote = _quotes[quoteIndex];
 
     final theme = Theme.of(context);
@@ -45,7 +49,7 @@ class QuoteWidget extends StatelessWidget {
         ),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.05),
+            color: Colors.black.withValues(alpha: 0.05),
             blurRadius: 10,
             offset: const Offset(0, 4),
           ),
