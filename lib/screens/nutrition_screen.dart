@@ -1,5 +1,6 @@
 import 'dart:async'; 
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:intl/intl.dart';
 import 'package:mobile_scanner/mobile_scanner.dart'; 
 import '../models/user_model.dart';
@@ -71,14 +72,14 @@ class _NutritionScreenState extends State<NutritionScreen> {
         // If the public food database is down or slow, we force a timeout after 10 seconds so the user isn't staring at a frozen loading screen forever.
         final food = await _foodService.getFoodByBarcode(result).timeout(
           const Duration(seconds: 10),
-          onTimeout: () => throw Exception("Server took too long. Try Manual Entry!"),
+          onTimeout: () => throw Exception("Server took too long. Try Manual Entry."),
         );
         
         if (mounted && food != null) {
           _showLogFoodDialog(context, initialFood: food);
         } else if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('Product not found. Try Manual Entry!'), backgroundColor: Colors.orange),
+            const SnackBar(content: Text('Product not found. Try Manual Entry.'), backgroundColor: Colors.orange),
           );
         }
       } catch (e) {
@@ -153,7 +154,7 @@ class _NutritionScreenState extends State<NutritionScreen> {
       try {
         final results = await _foodService.searchFood(query).timeout(
           const Duration(seconds: 10),
-          onTimeout: () => throw Exception("Server is busy or rate-limiting. Try Manual Entry!"),
+          onTimeout: () => throw Exception("Server is busy or rate-limiting. Try Manual Entry."),
         );
 
         if (!mounted) return;
@@ -162,7 +163,7 @@ class _NutritionScreenState extends State<NutritionScreen> {
         if (results.isEmpty) {
           ScaffoldMessenger.of(context).showSnackBar(
             const SnackBar(
-              content: Text('No results found (Server might be rate-limiting). Try Manual Entry!'), 
+              content: Text('No results found (Server might be rate-limiting). Try Manual Entry.'), 
               backgroundColor: Colors.orange
             )
           );
@@ -229,21 +230,66 @@ class _NutritionScreenState extends State<NutritionScreen> {
             children: [
               Text("Manual Meal Entry", style: Theme.of(context).textTheme.titleLarge),
               const SizedBox(height: 16),
-              TextField(controller: nameController, decoration: const InputDecoration(labelText: "Meal Name")),
+              TextField(
+                controller: nameController, 
+                decoration: const InputDecoration(labelText: "Meal Name")
+              ),
               const SizedBox(height: 8),
               Row(
                 children: [
-                  Expanded(child: TextField(controller: calController, decoration: const InputDecoration(labelText: "Calories"), keyboardType: TextInputType.number)),
+                  Expanded(
+                    child: TextField(
+                      controller: calController, 
+                      decoration: const InputDecoration(labelText: "Calories"), 
+                      keyboardType: TextInputType.number,
+                      // Prevent typing more than 4 digits (max 9999)
+                      inputFormatters: [
+                        FilteringTextInputFormatter.digitsOnly,
+                        LengthLimitingTextInputFormatter(4),
+                      ],
+                    )
+                  ),
                   const SizedBox(width: 12),
-                  Expanded(child: TextField(controller: proController, decoration: const InputDecoration(labelText: "Protein (g)"), keyboardType: TextInputType.number)),
+                  Expanded(
+                    child: TextField(
+                      controller: proController, 
+                      decoration: const InputDecoration(labelText: "Protein (g)"), 
+                      keyboardType: TextInputType.number,
+                      // Macros capped at 3 digits (max 999)
+                      inputFormatters: [
+                        FilteringTextInputFormatter.digitsOnly,
+                        LengthLimitingTextInputFormatter(3),
+                      ],
+                    )
+                  ),
                 ],
               ),
               const SizedBox(height: 8),
               Row(
                 children: [
-                  Expanded(child: TextField(controller: carbController, decoration: const InputDecoration(labelText: "Carbs (g)"), keyboardType: TextInputType.number)),
+                  Expanded(
+                    child: TextField(
+                      controller: carbController, 
+                      decoration: const InputDecoration(labelText: "Carbs (g)"), 
+                      keyboardType: TextInputType.number,
+                      inputFormatters: [
+                        FilteringTextInputFormatter.digitsOnly,
+                        LengthLimitingTextInputFormatter(3),
+                      ],
+                    )
+                  ),
                   const SizedBox(width: 12),
-                  Expanded(child: TextField(controller: fatController, decoration: const InputDecoration(labelText: "Fat (g)"), keyboardType: TextInputType.number)),
+                  Expanded(
+                    child: TextField(
+                      controller: fatController, 
+                      decoration: const InputDecoration(labelText: "Fat (g)"), 
+                      keyboardType: TextInputType.number,
+                      inputFormatters: [
+                        FilteringTextInputFormatter.digitsOnly,
+                        LengthLimitingTextInputFormatter(3),
+                      ],
+                    )
+                  ),
                 ],
               ),
               const SizedBox(height: 24),
@@ -253,8 +299,18 @@ class _NutritionScreenState extends State<NutritionScreen> {
                   onPressed: () async {
                     if (calController.text.isEmpty || nameController.text.isEmpty) return;
                     
+                    int calories = int.tryParse(calController.text) ?? 0;
+                    
+                    // Final safety check before database execution
+                    if (calories > 5000) {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(content: Text('Calories too high for a single entry.'), backgroundColor: Colors.red)
+                      );
+                      return;
+                    }
+                    
                     bool leveledUp = await FirestoreService().logFood(
-                      calories: int.tryParse(calController.text) ?? 0,
+                      calories: calories,
                       protein: int.tryParse(proController.text) ?? 0,
                       carbs: int.tryParse(carbController.text) ?? 0,
                       fat: int.tryParse(fatController.text) ?? 0,
@@ -306,13 +362,18 @@ class _NutritionScreenState extends State<NutritionScreen> {
                 controller: servingController,
                 keyboardType: TextInputType.number,
                 decoration: const InputDecoration(labelText: 'Amount (g/ml)', suffixText: 'g'),
+                // Restrict input to numbers only, max 4 digits
+                inputFormatters: [
+                  FilteringTextInputFormatter.digitsOnly,
+                  LengthLimitingTextInputFormatter(4),
+                ],
                 onChanged: (_) => recalculateMacros(), 
               ),
               const Divider(height: 32),
-              TextField(controller: calController, decoration: const InputDecoration(labelText: 'Calories (kcal)'), keyboardType: TextInputType.number),
-              TextField(controller: protController, decoration: const InputDecoration(labelText: 'Protein (g)'), keyboardType: TextInputType.number),
-              TextField(controller: carbController, decoration: const InputDecoration(labelText: 'Carbs (g)'), keyboardType: TextInputType.number),
-              TextField(controller: fatController, decoration: const InputDecoration(labelText: 'Fat (g)'), keyboardType: TextInputType.number),
+              TextField(controller: calController, decoration: const InputDecoration(labelText: 'Calories (kcal)'), keyboardType: TextInputType.number, readOnly: true),
+              TextField(controller: protController, decoration: const InputDecoration(labelText: 'Protein (g)'), keyboardType: TextInputType.number, readOnly: true),
+              TextField(controller: carbController, decoration: const InputDecoration(labelText: 'Carbs (g)'), keyboardType: TextInputType.number, readOnly: true),
+              TextField(controller: fatController, decoration: const InputDecoration(labelText: 'Fat (g)'), keyboardType: TextInputType.number, readOnly: true),
             ],
           ),
         ),
@@ -320,6 +381,16 @@ class _NutritionScreenState extends State<NutritionScreen> {
           TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('Cancel')),
           FilledButton(
             onPressed: () async {
+              int amount = int.tryParse(servingController.text) ?? 0;
+              
+              // Final safety check. 3000g is 3kg of food.
+              if (amount > 3000) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(content: Text('Amount cannot exceed 3000g.'), backgroundColor: Colors.red)
+                );
+                return;
+              }
+
               bool leveledUp = await FirestoreService().logFood(
                 calories: int.tryParse(calController.text) ?? 0,
                 protein: int.tryParse(protController.text) ?? 0,
@@ -338,21 +409,21 @@ class _NutritionScreenState extends State<NutritionScreen> {
     );
   }
 
-  // Gamification check: if eating this meal pushed the user's XP over the threshold, throw a big celebratory popup! Otherwise, just show a quiet success banner.
+  // Gamification check: if eating this meal pushed the user's XP over the threshold, throw a celebratory popup. Otherwise, show a quiet success banner.
   void _handleLoggingOutcome(bool leveledUp) {
     if (leveledUp) {
       showDialog(
         context: context,
         builder: (context) => AlertDialog(
           icon: const Icon(Icons.emoji_events, size: 48, color: Colors.amber),
-          title: const Text('🎉 LEVEL UP! 🎉'),
-          content: const Text('You logged a meal and reached the next level!'),
+          title: const Text('LEVEL UP'),
+          content: const Text('You logged a meal and reached the next level.'),
           actions: [TextButton(onPressed: () => Navigator.pop(context), child: const Text('OK'))],
         ),
       );
     } else {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Meal Logged! (+10 XP, +2 Coins)'), backgroundColor: Colors.green)
+        const SnackBar(content: Text('Meal Logged. (+10 XP, +2 Coins)'), backgroundColor: Colors.green)
       );
     }
   }
@@ -491,7 +562,7 @@ class _NutritionScreenState extends State<NutritionScreen> {
             bool isToday = i == 0;
             bars.add(Expanded(child: Column(children: [
               Expanded(child: Stack(alignment: Alignment.bottomCenter, children: [
-                Container(width: 12, color: Colors.grey.withValues(alpha: 0.2)),
+                Container(width: 12, decoration: BoxDecoration(color: Colors.grey.withValues(alpha: 0.2), borderRadius: BorderRadius.circular(4))),
                 FractionallySizedBox(heightFactor: percent, child: Container(width: 12, decoration: BoxDecoration(color: isToday ? theme.colorScheme.primary : Colors.grey, borderRadius: BorderRadius.circular(4)))),
               ])),
               const SizedBox(height: 8),
@@ -541,4 +612,4 @@ class _NutritionScreenState extends State<NutritionScreen> {
       FittedBox(child: Text("$current / ${goal}g", style: const TextStyle(fontSize: 12))),
     ]))));
   }
-} 
+}
