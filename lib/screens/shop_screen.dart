@@ -68,19 +68,22 @@ class _ShopScreenState extends State<ShopScreen> {
       context: context,
       builder: (ctx) => AlertDialog(
         title: const Text('New Custom Reward'),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            TextField(
-              controller: titleController,
-              decoration: const InputDecoration(labelText: 'Reward Title (e.g. Netflix)'),
-            ),
-            TextField(
-              controller: costController,
-              decoration: const InputDecoration(labelText: 'Cost (Coins)'),
-              keyboardType: TextInputType.number,
-            ),
-          ],
+        // FIX: Wrapped in SingleChildScrollView to survive the keyboard sliding up
+        content: SingleChildScrollView(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              TextField(
+                controller: titleController,
+                decoration: const InputDecoration(labelText: 'Reward Title (e.g. Netflix)'),
+              ),
+              TextField(
+                controller: costController,
+                decoration: const InputDecoration(labelText: 'Cost (Coins)'),
+                keyboardType: TextInputType.number,
+              ),
+            ],
+          ),
         ),
         actions: [
           TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('Cancel')),
@@ -158,6 +161,7 @@ class _ShopScreenState extends State<ShopScreen> {
   }
 
   // The custom rewards tab. It fetches the user's personal treats and disables the "Redeem" button if their bank balance is too low.
+  // The custom rewards tab. It fetches the user's personal treats and disables the "Redeem" button if their bank balance is too low.
   Widget _buildMyRewardsTab(UserModel user) {
     return Scaffold(
       floatingActionButton: FloatingActionButton.extended(
@@ -185,21 +189,35 @@ class _ShopScreenState extends State<ShopScreen> {
               final canAfford = user.currentCoins >= reward.cost;
 
               return Card(
-                child: ListTile(
-                  leading: const CircleAvatar(child: Icon(Icons.star)),
-                  title: Text(
-                    reward.title,
-                    maxLines: 2,
-                    overflow: TextOverflow.ellipsis,
-                  ),
-                  subtitle: Text(
-                    '${reward.cost} Coins',
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                  ),
-                  trailing: Row(
-                    mainAxisSize: MainAxisSize.min,
+                child: Padding(
+                  padding: const EdgeInsets.all(12.0),
+                  child: Row(
                     children: [
+                      const CircleAvatar(child: Icon(Icons.star)),
+                      const SizedBox(width: 12), // Slightly reduced to give text more breathing room
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            // FIX: FittedBox forces the text to shrink-to-fit instead of breaking mid-word!
+                            FittedBox(
+                              fit: BoxFit.scaleDown,
+                              alignment: Alignment.centerLeft,
+                              child: Text(
+                                reward.title,
+                                style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                              ),
+                            ),
+                            const SizedBox(height: 4),
+                            Text(
+                              '${reward.cost} Coins',
+                              style: const TextStyle(color: Colors.grey, fontSize: 13),
+                            ),
+                          ],
+                        ),
+                      ),
+                      const SizedBox(width: 4),
                       FilledButton.tonal(
                         onPressed: canAfford ? () => _buyReward(reward) : null,
                         child: const Text('Redeem'),
@@ -207,6 +225,8 @@ class _ShopScreenState extends State<ShopScreen> {
                       IconButton(
                         icon: const Icon(Icons.delete_outline, color: Colors.grey),
                         onPressed: () => _deleteCustomReward(reward.id),
+                        padding: EdgeInsets.zero,
+                        constraints: const BoxConstraints(), // Tightens the icon button's invisible padding
                       ),
                     ],
                   ),

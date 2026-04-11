@@ -15,6 +15,7 @@ class OnboardingScreen extends StatefulWidget {
 class _OnboardingScreenState extends State<OnboardingScreen> {
   final PageController _pageController = PageController();
   final FirestoreService _firestore = FirestoreService();
+  final TextEditingController _customDietController = TextEditingController();
 
   int _currentPage = 0;
   bool _isLoading = false;
@@ -30,6 +31,13 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
 
   final List<String> _dietOptions = ['None', 'Vegan', 'Vegetarian', 'Keto', 'Halal', 'No Nuts', 'Dairy-Free'];
 
+  @override
+  void dispose() {
+    _pageController.dispose();
+    _customDietController.dispose();
+    super.dispose();
+  }
+
   // Math function. It takes all the user's answers, runs them through the clinical Mifflin-St Jeor equation to find their baseline metabolic rate, adjusts for their goals, and splits the calories into specific macro targets before saving to Firebase.
   Future<void> _finishOnboarding() async {
     setState(() => _isLoading = true);
@@ -41,10 +49,20 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
     // Apply Activity Multiplier
     double multiplier;
     switch (_activityLevel) {
-      case 'Sedentary': multiplier = 1.2; break;
-      case 'Lightly Active': multiplier = 1.375; break;
-      case 'Very Active': multiplier = 1.725; break;
-      default: multiplier = 1.55; 
+      case 'Sedentary': 
+        multiplier = 1.2; 
+        break;
+      case 'Lightly Active': 
+        multiplier = 1.375; 
+        break;
+      case 'Moderately Active': 
+        multiplier = 1.55; 
+        break;
+      case 'Very Active': 
+        multiplier = 1.725; 
+        break;
+      default: 
+        multiplier = 1.2; // Safe baseline fallback
     }
     double tdee = bmr * multiplier;
 
@@ -131,7 +149,16 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
           const SizedBox(width: 8),
           Text(label, style: const TextStyle(fontWeight: FontWeight.bold)),
           const Spacer(),
-          Text(value, style: TextStyle(color: color, fontWeight: FontWeight.bold, fontSize: 16)),
+          Flexible(
+            child: FittedBox(
+              fit: BoxFit.scaleDown,
+              alignment: Alignment.centerRight,
+              child: Text(
+                value, 
+                style: TextStyle(color: color, fontWeight: FontWeight.bold, fontSize: 16)
+              ),
+            ),
+          ),
         ],
       ),
     );
@@ -144,6 +171,43 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
     } else {
       _finishOnboarding();
     }
+  }
+
+  // Pops open a dialog for the user to type in a custom dietary restriction.
+  void _showAddCustomDietDialog() {
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text("Add Custom Diet"),
+        content: TextField(
+          controller: _customDietController,
+          decoration: const InputDecoration(hintText: "e.g. Low Sodium, Pescatarian"),
+          textCapitalization: TextCapitalization.words,
+        ),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(ctx), child: const Text("Cancel")),
+          FilledButton(
+            onPressed: () {
+              final customDiet = _customDietController.text.trim();
+              if (customDiet.isNotEmpty) {
+                setState(() {
+                  // Add it to the main list if it doesn't exist so it renders as a chip
+                  if (!_dietOptions.contains(customDiet)) {
+                    _dietOptions.add(customDiet);
+                  }
+                  // Automatically select it and remove "None"
+                  _selectedRestrictions.remove('None');
+                  _selectedRestrictions.add(customDiet);
+                });
+                _customDietController.clear();
+              }
+              Navigator.pop(ctx);
+            },
+            child: const Text("Add"),
+          ),
+        ],
+      ),
+    );
   }
 
   // The main scaffold. It shows a progress bar at the top so the user knows how many questions are left, and anchors the main action button at the bottom.
@@ -280,40 +344,51 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
       title: "Any Dietary Rules?",
       child: Wrap(
         spacing: 8.0,
-        children: _dietOptions.map((diet) {
-          final isSelected = _selectedRestrictions.contains(diet);
-          return FilterChip(
-            label: Text(diet),
-            selected: isSelected,
-            onSelected: (selected) {
-              setState(() {
-                if (diet == 'None') {
-                  _selectedRestrictions.clear();
-                  if (selected) _selectedRestrictions.add('None');
-                } else {
-                  _selectedRestrictions.remove('None');
-                  selected ? _selectedRestrictions.add(diet) : _selectedRestrictions.remove(diet);
-                }
-              });
-            },
-          );
-        }).toList(),
+        children: [
+          ..._dietOptions.map((diet) {
+            final isSelected = _selectedRestrictions.contains(diet);
+            return FilterChip(
+              label: Text(diet),
+              selected: isSelected,
+              onSelected: (selected) {
+                setState(() {
+                  if (diet == 'None') {
+                    _selectedRestrictions.clear();
+                    if (selected) _selectedRestrictions.add('None');
+                  } else {
+                    _selectedRestrictions.remove('None');
+                    selected ? _selectedRestrictions.add(diet) : _selectedRestrictions.remove(diet);
+                  }
+                });
+              },
+            );
+          }),
+          ActionChip(
+            avatar: const Icon(Icons.add, size: 16),
+            label: const Text("Add Custom"),
+            onPressed: _showAddCustomDietDialog,
+          ),
+        ],
       ),
     );
   }
 
   // A wrapper widget that ensures every question page shares the exact same title styling and spacing.
   Widget _pageTemplate({required String title, required Widget child}) {
-    return Padding(
-      padding: const EdgeInsets.all(24.0),
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          Text(title, style: Theme.of(context).textTheme.headlineMedium, textAlign: TextAlign.center),
-          const SizedBox(height: 40),
-          child,
-        ],
+    // FIX: Wrapped the template in a Center and SingleChildScrollView
+    // This stops the background layout from violently squishing when the keyboard opens.
+    return Center(
+      child: SingleChildScrollView(
+        padding: const EdgeInsets.all(24.0),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            Text(title, style: Theme.of(context).textTheme.headlineMedium, textAlign: TextAlign.center),
+            const SizedBox(height: 40),
+            child,
+          ],
+        ),
       ),
     );
   }

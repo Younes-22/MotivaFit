@@ -196,7 +196,7 @@ class _HomeScreenState extends State<HomeScreen> {
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
                               Text(
-                                'Welcome Back,',
+                                'Welcome,',
                                 style: theme.textTheme.headlineSmall?.copyWith(color: Colors.grey[600]),
                               ),
                               FittedBox(

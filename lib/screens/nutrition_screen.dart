@@ -100,32 +100,34 @@ class _NutritionScreenState extends State<NutritionScreen> {
       context: context,
       builder: (ctx) => AlertDialog(
         title: const Text('Log a Meal'),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            TextField(
-              controller: searchController,
-              decoration: const InputDecoration(
-                labelText: 'Search Food Name',
-                suffixIcon: Icon(Icons.search),
+        content: SingleChildScrollView(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              TextField(
+                controller: searchController,
+                decoration: const InputDecoration(
+                  labelText: 'Search Food Name',
+                  suffixIcon: Icon(Icons.search),
+                ),
+                onSubmitted: (val) {
+                  Navigator.pop(ctx); 
+                  _performSearch(context, val);
+                },
               ),
-              onSubmitted: (val) {
-                Navigator.pop(ctx); 
-                _performSearch(context, val);
-              },
-            ),
-            const SizedBox(height: 20),
-            const Text("OR", style: TextStyle(color: Colors.grey, fontSize: 12)),
-            const SizedBox(height: 12),
-            OutlinedButton.icon(
-              icon: const Icon(Icons.edit_note),
-              label: const Text('Enter Manually'),
-              onPressed: () {
-                Navigator.pop(ctx);
-                _showManualEntryDialog();
-              },
-            ),
-          ],
+              const SizedBox(height: 20),
+              const Text("OR", style: TextStyle(color: Colors.grey, fontSize: 12)),
+              const SizedBox(height: 12),
+              OutlinedButton.icon(
+                icon: const Icon(Icons.edit_note),
+                label: const Text('Enter Manually'),
+                onPressed: () {
+                  Navigator.pop(ctx);
+                  _showManualEntryDialog();
+                },
+              ),
+            ],
+          ),
         ),
         actions: [
           TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('Cancel')),
@@ -317,8 +319,9 @@ class _NutritionScreenState extends State<NutritionScreen> {
                       date: DateTime.now(),
                     );
                     
-                    if (!mounted) return;
+                    if (!ctx.mounted) return;
                     Navigator.pop(ctx);
+                    if (!mounted) return;
                     _handleLoggingOutcome(leveledUp);
                   }, 
                   child: const Text("Log Manual Meal")
@@ -398,8 +401,9 @@ class _NutritionScreenState extends State<NutritionScreen> {
                 fat: int.tryParse(fatController.text) ?? 0,
                 date: DateTime.now()
               );
-              if (!mounted) return;
+              if (!ctx.mounted) return;
               Navigator.pop(ctx); 
+              if (!mounted) return;
               _handleLoggingOutcome(leveledUp);
             },
             child: const Text('Log'),
@@ -502,7 +506,7 @@ class _NutritionScreenState extends State<NutritionScreen> {
           final user = userSnapshot.data!;
 
           return SingleChildScrollView(
-            padding: const EdgeInsets.all(16),
+            padding: const EdgeInsets.only(left: 16, top: 16, right: 16, bottom: 120),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [

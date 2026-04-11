@@ -20,13 +20,11 @@ class _AIChatScreenState extends State<AIChatScreen> {
   @override
   void initState() {
     super.initState();
-    // Show the medical disclaimer right when the screen loads
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _showDisclaimer();
     });
   }
 
-  // Drops Mo's initial greeting into the chat UI
   void _sendWelcomeMessage() {
     setState(() {
       _messages.add({
@@ -36,18 +34,19 @@ class _AIChatScreenState extends State<AIChatScreen> {
     });
   }
 
-  // Forces the user to acknowledge the AI warning before they can start chatting
   void _showDisclaimer() {
     showDialog(
       context: context,
-      barrierDismissible: false, // Prevents them from tapping outside the box to bypass it
+      barrierDismissible: false,
       builder: (ctx) => AlertDialog(
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-        title: const Row(
+        title: Row(
           children: [
-            Icon(Icons.warning_amber_rounded, color: Colors.orange, size: 28),
-            SizedBox(width: 8),
-            Text("AI Safety Warning"),
+            const Icon(Icons.warning_amber_rounded, color: Colors.orange, size: 28),
+            const SizedBox(width: 8),
+            Expanded(
+              child: const Text("AI Safety Warning", overflow: TextOverflow.ellipsis),
+            ),
           ],
         ),
         content: const Text(
@@ -61,7 +60,6 @@ class _AIChatScreenState extends State<AIChatScreen> {
           FilledButton(
             onPressed: () {
               Navigator.pop(ctx);
-              // Trigger the welcome message right after they accept the disclaimer
               if (_messages.isEmpty) {
                 _sendWelcomeMessage();
               }
@@ -73,30 +71,36 @@ class _AIChatScreenState extends State<AIChatScreen> {
     );
   }
 
-  // Sends the user's message to the AI service and waits for Mo's response
   void _sendMessage(UserModel user, NutritionDay nutrition) async {
     if (_controller.text.trim().isEmpty) return;
 
     final userQuery = _controller.text;
     setState(() {
+      // 1. Add the user's new message to the history list immediately
       _messages.add({"role": "user", "text": userQuery});
       _isLoading = true;
     });
     _controller.clear();
 
+    // 2. Pass the ENTIRE chat history to the service, not just the single query
     final response = await _aiService.getMealSuggestion(
       user: user,
       todayNutrition: nutrition,
-      userQuery: userQuery,
+      chatHistory: _messages, 
     );
 
+    // 3. The Blank Bubble Fix: If the API returns nothing, swap it with a default error message.
+    String safeResponse = response.trim();
+    if (safeResponse.isEmpty) {
+      safeResponse = "Oops! My brain froze for a second. Could you repeat that?";
+    }
+
     setState(() {
-      _messages.add({"role": "bot", "text": response});
+      _messages.add({"role": "bot", "text": safeResponse});
       _isLoading = false;
     });
   }
 
-  // The main layout. We wrap the whole screen in StreamBuilders so Mo always has access to your live profile stats and today's calories when you chat.
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -134,8 +138,9 @@ class _AIChatScreenState extends State<AIChatScreen> {
     );
   }
 
-  // Builds a single chat bubble. It flips the alignment and colors depending on whether the message is from the user or from Mo.
   Widget _buildChatBubble(bool isUser, String text) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
     return Align(
       alignment: isUser ? Alignment.centerRight : Alignment.centerLeft,
       child: Container(
@@ -143,7 +148,9 @@ class _AIChatScreenState extends State<AIChatScreen> {
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
         constraints: BoxConstraints(maxWidth: MediaQuery.of(context).size.width * 0.75),
         decoration: BoxDecoration(
-          color: isUser ? Colors.deepPurple : Colors.grey.shade200,
+          color: isUser 
+              ? Colors.deepPurple 
+              : (isDark ? Colors.grey.shade800 : Colors.grey.shade200),
           borderRadius: BorderRadius.only(
             topLeft: const Radius.circular(16),
             topRight: const Radius.circular(16),
@@ -153,13 +160,14 @@ class _AIChatScreenState extends State<AIChatScreen> {
         ),
         child: Text(
           text,
-          style: TextStyle(color: isUser ? Colors.white : Colors.black87),
+          style: TextStyle(
+            color: isUser ? Colors.white : (isDark ? Colors.white : Colors.black87),
+          ),
         ),
       ),
     );
   }
 
-  // The text bar at the bottom. It packages up your current profile and nutrition data to send off to the AI along with your typed message.
   Widget _buildInputArea(UserModel user, NutritionDay nutrition) {
     return Container(
       padding: const EdgeInsets.all(16),
@@ -172,10 +180,7 @@ class _AIChatScreenState extends State<AIChatScreen> {
           Expanded(
             child: TextField(
               controller: _controller,
-              decoration: const InputDecoration(
-                hintText: 'Message Mo...',
-                border: InputBorder.none,
-              ),
+              decoration: const InputDecoration(hintText: 'Message Mo...', border: InputBorder.none),
               onSubmitted: (_) => _sendMessage(user, nutrition),
             ),
           ),

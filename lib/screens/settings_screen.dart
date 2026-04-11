@@ -62,7 +62,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
           final user = snapshot.data!;
           List<String> userRestrictions = List.from(user.dietaryRestrictions);
           
-          // Checks what theme the user currently has active in the database. If they bought a special theme from the shop, we  default the dropdown to 'custom'.
+          // Checks what theme the user currently has active in the database. If they bought a special theme from the shop, we default the dropdown to 'custom'.
           String themeValue;
           if (['system', 'default'].contains(user.selectedThemeId)) {
             themeValue = 'system';
@@ -78,7 +78,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
             children: [
               const SizedBox(height: 20),
               
-              // Apperance section
+              // Appearance section
               _buildSectionHeader('Appearance'),
               Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 16.0),
@@ -88,6 +88,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                     const Text("App Theme", style: TextStyle(fontSize: 14, color: Colors.grey)),
                     const SizedBox(height: 8),
                     DropdownButtonFormField<String>(
+                      isExpanded: true, // FIX: Prevents the long shop theme text from overflowing
                       value: themeValue,
                       items: [
                         const DropdownMenuItem(value: 'system', child: Text('📱 System Default')),
@@ -120,29 +121,13 @@ class _SettingsScreenState extends State<SettingsScreen> {
               const SizedBox(height: 8),
               const Divider(),
 
-              // Fitness & diet section
+// Fitness & diet section
               _buildSectionHeader('Fitness & Diet'),
               Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 16.0),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    const Text("Current Goal", style: TextStyle(fontSize: 14, color: Colors.grey)),
-                    const SizedBox(height: 8),
-                    DropdownButtonFormField<String>(
-                      value: user.fitnessGoal,
-                      items: _goals.map((goal) => DropdownMenuItem(value: goal, child: Text(goal))).toList(),
-                      onChanged: (newGoal) {
-                        if (newGoal != null) {
-                          firestore.updateDietaryPreferences(restrictions: userRestrictions, goal: newGoal);
-                        }
-                      },
-                      decoration: InputDecoration(
-                        contentPadding: const EdgeInsets.symmetric(horizontal: 12),
-                        border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
-                      ),
-                    ),
-                    const SizedBox(height: 16),
                     const Text("Dietary Restrictions & Allergies", style: TextStyle(fontSize: 14, color: Colors.grey)),
                     const SizedBox(height: 8),
                     
@@ -201,28 +186,31 @@ class _SettingsScreenState extends State<SettingsScreen> {
       context: context,
       builder: (ctx) => AlertDialog(
         title: const Text("Add Restriction"),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            const Text("Select a common one or type your own:"),
-            const SizedBox(height: 12),
-            Wrap(
-              spacing: 4,
-              children: _presetRestrictions.where((p) => !current.contains(p)).map((p) => ActionChip(
-                label: Text(p, style: const TextStyle(fontSize: 12)),
-                onPressed: () {
-                  current.add(p);
-                  firestore.updateDietaryPreferences(restrictions: current, goal: goal);
-                  Navigator.pop(ctx);
-                },
-              )).toList(),
-            ),
-            const Divider(height: 32),
-            TextField(
-              controller: _customController,
-              decoration: const InputDecoration(hintText: "e.g. No Shellfish, Low Carb"),
-            ),
-          ],
+        // FIX: Wrapped the column in a SingleChildScrollView so it scrolls instead of overflowing on smaller screens
+        content: SingleChildScrollView(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const Text("Select a common one or type your own:"),
+              const SizedBox(height: 12),
+              Wrap(
+                spacing: 4,
+                children: _presetRestrictions.where((p) => !current.contains(p)).map((p) => ActionChip(
+                  label: Text(p, style: const TextStyle(fontSize: 12)),
+                  onPressed: () {
+                    current.add(p);
+                    firestore.updateDietaryPreferences(restrictions: current, goal: goal);
+                    Navigator.pop(ctx);
+                  },
+                )).toList(),
+              ),
+              const Divider(height: 32),
+              TextField(
+                controller: _customController,
+                decoration: const InputDecoration(hintText: "e.g. No Shellfish, Low Carb"),
+              ),
+            ],
+          ),
         ),
         actions: [
           TextButton(onPressed: () => Navigator.pop(ctx), child: const Text("Cancel")),

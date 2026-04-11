@@ -156,7 +156,7 @@ class _LoginScreenState extends State<LoginScreen> {
                 ),
                 const SizedBox(height: 8),
                 Text(
-                  _isLogin ? 'Welcome back, Hero!' : 'Start your journey today.',
+                  _isLogin ? 'Welcome, Hero!' : 'Start your journey today.',
                   textAlign: TextAlign.center,
                   style: Theme.of(context).textTheme.bodyLarge?.copyWith(
                     color: Colors.grey[600],

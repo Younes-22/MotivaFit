@@ -1,5 +1,7 @@
 # MotivaFit 🏋️‍♂️🥗
 
+The full version of this project is available at https://cityuni-my.sharepoint.com/:f:/r/personal/younes_bekhti_city_ac_uk/Documents/Desktop/Final%20Year%20Project/Code%20Submission?csf=1&web=1&e=0E9Rrx
+
 MotivaFit is a gamified Flutter application designed to make health and fitness tracking engaging. By combining daily nutrition logging and workout tracking with RPG-style elements (XP, Coins, and weekly Boss Battles), MotivaFit keeps users consistent and motivated. It also features a built-in AI Nutritionist powered by a dual-model fallback architecture for maximum uptime.
 
 ---
@@ -57,7 +59,8 @@ This project requires a Firebase backend. Use the FlutterFire CLI to connect the
 Bash
 dart pub global activate flutterfire_cli
 flutterfire configure
-🚀 How to Run the Code
+
+How to Run the Code
 Once your .env file and Firebase configurations are locked in, you can run the app on an emulator or physical device.
 
 To run on an iOS Simulator (Mac only):
@@ -69,7 +72,8 @@ To run on an Android Emulator or physical device:
 
 Bash
 flutter run
-🧪 Testing the Application
+
+Testing the Application
 Because MotivaFit relies heavily on real-time external APIs and Firebase backend services, the most effective way to test the codebase is through manual user-journey exploration.
 
 Once your dependencies are installed and the app is running, try the following flow to verify all systems are operational:
@@ -83,10 +87,12 @@ Gamification: Complete a daily task or finish a workout to ensure the XP bar inc
 AI Architecture: Open the AI Assistant (Mo) and ask for a meal recommendation to verify the Hugging Face / Gemini fallback router is successfully generating responses.
 
 📊 APIs & Models Used
-Instead of static CSV datasets, this application relies on live APIs and open-weight models to provide real-time data to the user:
+This application relies on live APIs and open-weight models to provide real-time data to the user:
 
 Food & Nutrition Database: Spoonacular Food API
 
 Primary AI Assistant: Hugging Face Serverless Inference API (routing to openai/gpt-oss-20b)
 
-Fallback AI Assistant: Google Gemini API (gemini-1.5-flash)
+Fallback AI Assistant: Google Gemini API
+
+
