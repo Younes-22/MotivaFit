@@ -1,6 +1,6 @@
 # MotivaFit
 
-The full version of this project is available at: [MotivaFit Source Code](https://cityuni-my.sharepoint.com/:f:/r/personal/younes_bekhti_city_ac_uk/Documents/Desktop/Final%20Year%20Project/Code%20Submission?csf=1&web=1&e=0E9Rrx)
+The full version of this project is also available at: https://cityuni-my.sharepoint.com/:f:/g/personal/younes_bekhti_city_ac_uk/IgB7AF9csz9bSIQ_nTFTZhRKAd201hU_ShtOzem-_fw76q4?e=gHnmlK
 
 MotivaFit is a gamified Flutter application designed to make health and fitness tracking engaging. By combining daily nutrition logging and workout tracking with RPG-style elements (XP, Coins, and weekly Boss Battles), MotivaFit keeps users consistent and motivated. It also features a built-in AI Nutritionist powered by a dual-model fallback architecture to ensure maximum uptime and reliability.
 
