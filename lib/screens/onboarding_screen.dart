@@ -375,7 +375,6 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
 
   // A wrapper widget that ensures every question page shares the exact same title styling and spacing.
   Widget _pageTemplate({required String title, required Widget child}) {
-    // FIX: Wrapped the template in a Center and SingleChildScrollView
     // This stops the background layout from violently squishing when the keyboard opens.
     return Center(
       child: SingleChildScrollView(

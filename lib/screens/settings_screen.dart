@@ -88,7 +88,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                     const Text("App Theme", style: TextStyle(fontSize: 14, color: Colors.grey)),
                     const SizedBox(height: 8),
                     DropdownButtonFormField<String>(
-                      isExpanded: true, // FIX: Prevents the long shop theme text from overflowing
+                      isExpanded: true, // Prevents the long shop theme text from overflowing
                       value: themeValue,
                       items: [
                         const DropdownMenuItem(value: 'system', child: Text('📱 System Default')),

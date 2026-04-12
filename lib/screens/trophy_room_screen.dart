@@ -102,7 +102,7 @@ class TrophyRoomScreen extends StatelessWidget {
               
               const SizedBox(height: 10),
 
-              // Builds a flexible, scrollable grid that perfectly fits 3 badges per row.
+              // Builds a flexible, scrollable grid that fits 3 badges per row.
               Expanded(
                 child: GridView.builder(
                   padding: const EdgeInsets.all(16),

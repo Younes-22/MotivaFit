@@ -5,7 +5,7 @@ import 'package:flutter/material.dart';
 class QuoteWidget extends StatelessWidget {
   const QuoteWidget({super.key});
 
-  // A hardcoded list of fitness and productivity quotes.
+  // A list of fitness and productivity quotes.
   static const List<String> _quotes = [
     "The only bad workout is the one that didn't happen.",
     "Action is the foundational key to all success.",

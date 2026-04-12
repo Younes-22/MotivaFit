@@ -15,7 +15,7 @@ class FirestoreService {
   // A quick shortcut to grab the current user's ID.
   String? get _uid => _auth.currentUser?.uid;
 
-  // User profile & GAMIFICATION METHODS
+  // User profile & Gamification Methods
 
   // Called the very first time a user signs up.
   Future<void> createUserProfile(User user, String username) async {
@@ -74,7 +74,6 @@ class FirestoreService {
     });
   }
 
-  // FIXED: The master math function now uses a flat 500 XP threshold and a while loop.
   bool _applyRewards(Transaction transaction, DocumentReference userRef, UserModel user, int xp, int coins, {List<String>? updatedBadges}) {
     int newXP = user.currentXP + xp;
     int newCoins = user.currentCoins + coins;
@@ -83,7 +82,7 @@ class FirestoreService {
 
     const int xpRequired = 500; // Flat 500 XP per level
     
-    // Level Up Logic - Safe for massive XP drops
+    // Level Up Logic. Safee for massive XP drops
     while (newXP >= xpRequired) {
       newLevel++;
       newXP -= xpRequired; 
@@ -92,7 +91,7 @@ class FirestoreService {
       if (newLevel >= 50 && !currentBadges.contains('level_50')) currentBadges.add('level_50');
     }
 
-    // Level Down Logic - Safe for massive XP penalties
+    // Level Down Logic. Safe for massive XP penalties
     while (newXP < 0 && newLevel > 1) {
       newLevel--;
       newXP += xpRequired;
@@ -111,9 +110,7 @@ class FirestoreService {
     return newLevel > user.currentLevel;
   }
 
-  // ==========================================
-  // TASK METHODS
-  // ==========================================
+  // Task Methods
 
   Stream<List<Task>> getTasksForDay(DateTime date) {
     if (_uid == null) return const Stream.empty();
@@ -150,7 +147,6 @@ Future<bool> toggleTaskCompletion(Task task, bool newStatus) async {
     String bossId = _getCurrentWeekBossId();
     final bossRef = userRef.collection('boss_battles').doc(bossId);
 
-    // FIX: The "Time-Travel" Check
     // Strip the hours/minutes to safely compare calendar days
     final now = DateTime.now();
     final today = DateTime(now.year, now.month, now.day);
@@ -247,9 +243,7 @@ Future<bool> toggleTaskCompletion(Task task, bool newStatus) async {
     }
   }
 
-  // ==========================================
-  // NUTRITION & PREFERENCES METHODS
-  // ==========================================
+  // Nurition & Preferences Methods
 
   Future<void> updateNutritionGoals({required int calories, required int protein, required int carbs, required int fat}) async {
     if (_uid == null) return;
@@ -329,9 +323,7 @@ Future<bool> toggleTaskCompletion(Task task, bool newStatus) async {
         .snapshots().map((snapshot) => snapshot.docs.map((doc) => NutritionDay.fromSnapshot(doc)).toList());
   }
 
-  // ==========================================
-  // WORKOUT & ROUTINE METHODS
-  // ==========================================
+  // Workout & routine methods
 
   Future<bool> logExercise({required String name, required int sets, required String reps, required double weight, required DateTime date}) async {
     if (_uid == null) return false;
@@ -443,9 +435,7 @@ Future<bool> toggleTaskCompletion(Task task, bool newStatus) async {
         .snapshots().map((doc) => !doc.exists ? WorkoutDay(id: dateId, date: date, exercises: []) : WorkoutDay.fromSnapshot(doc));
   }
 
-  // ==========================================
-  // DAILY ROLLOVER LOGIC (PENALTIES)
-  // ==========================================
+  // Daily roll over logic (pentalty)
 
   Future<String?> checkDailyRollover() async {
     if (_uid == null) return null;
@@ -494,9 +484,7 @@ Future<bool> toggleTaskCompletion(Task task, bool newStatus) async {
     return "Welcome back! You had a perfect streak last time.";
   }
 
-  // ==========================================
-  // DEBUG / SETTINGS
-  // ==========================================
+  // Debug / Settings
   
   Future<void> resetAccount() async {
     if (_uid == null) return;
@@ -505,9 +493,7 @@ Future<bool> toggleTaskCompletion(Task task, bool newStatus) async {
     });
   }
 
-  // ==========================================
-  // BOSS BATTLE METHODS
-  // ==========================================
+  // Boss Battle Methods
 
   String _getCurrentWeekBossId() {
     DateTime now = DateTime.now();
@@ -543,7 +529,6 @@ Future<bool> toggleTaskCompletion(Task task, bool newStatus) async {
     });
   }
 
-  // FIXED: No longer updates the user profile directly. Just updates the boss and reports back if it died!
   bool _internalBossDamage(Transaction transaction, DocumentSnapshot bossSnap, DocumentReference bossRef, int damage) {
     final boss = BossModel.fromSnapshot(bossSnap);
     

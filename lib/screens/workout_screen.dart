@@ -21,6 +21,7 @@ class _WorkoutScreenState extends State<WorkoutScreen> with SingleTickerProvider
     _tabController = TabController(length: 2, vsync: this);
   }
 
+  // This dialog pulls double duty. It can either add a one-off exercise straight to today's log, or pass the exercise back to the Plan Builder if the user is currently creating a new template.
   void _showAddExerciseDialog(BuildContext context, {Function(Exercise)? onAdd}) {
     final nameController = TextEditingController();
     final setsController = TextEditingController();
@@ -61,6 +62,7 @@ class _WorkoutScreenState extends State<WorkoutScreen> with SingleTickerProvider
                   id: DateTime.now().millisecondsSinceEpoch.toString(),
                   name: name,
                   sets: sets,
+                  // Fallback to "0" to prevent UI crashes if they forget to type the reps
                   reps: reps.isEmpty ? "0" : reps,
                   weight: weight,
                 );
@@ -82,6 +84,7 @@ class _WorkoutScreenState extends State<WorkoutScreen> with SingleTickerProvider
     );
   }
 
+  // We use a StatefulBuilder here so the dialog can update its own internal list of exercises without needing to rebuild the entire WorkoutScreen in the background.
   void _showCreatePlanDialog(BuildContext context) {
     final nameController = TextEditingController();
     List<Exercise> tempExercises = [];
@@ -144,6 +147,7 @@ class _WorkoutScreenState extends State<WorkoutScreen> with SingleTickerProvider
     );
   }
 
+  // Time to lock-in the results. We ping the database to mark the day as complete and check if this specific workout pushed the user over the XP threshold for a level up.
   void _finishWorkout(BuildContext context) async {
     bool leveledUp = await _firestore.finishWorkout(_selectedDate);
     if (!context.mounted) return;
@@ -192,6 +196,7 @@ class _WorkoutScreenState extends State<WorkoutScreen> with SingleTickerProvider
         final workout = snapshot.data!;
         final exercises = workout.exercises;
 
+        // If they've already locked in their workout for the day, we swap out the active exercise list for a victory screen.
         if (workout.isCompleted) {
           return Center(
             child: Column(
@@ -214,6 +219,7 @@ class _WorkoutScreenState extends State<WorkoutScreen> with SingleTickerProvider
           );
         }
 
+        // The fallback UI for when the user first opens the app and hasn't added anything yet.
         if (exercises.isEmpty) {
           return Center(
             child: Column(
@@ -321,6 +327,7 @@ class _WorkoutScreenState extends State<WorkoutScreen> with SingleTickerProvider
                             icon: const Icon(Icons.play_arrow, color: Colors.green),
                             tooltip: "Start this workout",
                             onPressed: () {
+                              // Grabs all the exercises from this saved template and dumps them directly into today's active workout log. We then auto-swipe them back to the first tab.
                               _firestore.loadRoutineIntoToday(routine, _selectedDate);
                               _tabController.animateTo(0); 
                               ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Plan Loaded!')));

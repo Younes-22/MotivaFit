@@ -11,7 +11,7 @@ class PdfService {
   final FirebaseFirestore _db = FirebaseFirestore.instance;
   final FirebaseAuth _auth = FirebaseAuth.instance;
 
-  // Generates the PDF. Unlike our normal UI which uses Streams for live updates, this method uses `.get()` to take a single, static snapshot of the database exactly as it looks right this second.
+  // Generates the pdf. Unlike our normal UI which uses Streams for live updates, this method uses `.get()` to take a single, static snapshot of the database exactly as it looks right this second.
   Future<void> generateAndDownloadReport() async {
     final uid = _auth.currentUser?.uid;
     if (uid == null) return;

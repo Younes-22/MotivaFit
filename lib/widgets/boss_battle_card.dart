@@ -185,7 +185,7 @@ class BossBattleCard extends StatelessWidget {
                 
                 const SizedBox(height: 10),
                 
-                // The strategy guide letting the user know exactly how to deal damage
+                // The strategy guiide letting the user know exactly how to deal damage
                 Center(
                   child: Text(
                     hintText,

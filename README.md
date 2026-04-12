@@ -1,8 +1,8 @@
-# MotivaFit 🏋️‍♂️🥗
+# MotivaFit
 
-The full version of this project is available at https://cityuni-my.sharepoint.com/:f:/r/personal/younes_bekhti_city_ac_uk/Documents/Desktop/Final%20Year%20Project/Code%20Submission?csf=1&web=1&e=0E9Rrx
+The full version of this project is available at: [MotivaFit Source Code](https://cityuni-my.sharepoint.com/:f:/r/personal/younes_bekhti_city_ac_uk/Documents/Desktop/Final%20Year%20Project/Code%20Submission?csf=1&web=1&e=0E9Rrx)
 
-MotivaFit is a gamified Flutter application designed to make health and fitness tracking engaging. By combining daily nutrition logging and workout tracking with RPG-style elements (XP, Coins, and weekly Boss Battles), MotivaFit keeps users consistent and motivated. It also features a built-in AI Nutritionist powered by a dual-model fallback architecture for maximum uptime.
+MotivaFit is a gamified Flutter application designed to make health and fitness tracking engaging. By combining daily nutrition logging and workout tracking with RPG-style elements (XP, Coins, and weekly Boss Battles), MotivaFit keeps users consistent and motivated. It also features a built-in AI Nutritionist powered by a dual-model fallback architecture to ensure maximum uptime and reliability.
 
 ---
 
@@ -13,80 +13,139 @@ The project follows a feature-first, modular architecture to separate the UI fro
 ```text
 lib/
 │
-├── models/               # Data structures (User, Task, Boss, Nutrition, Workout)
-├── screens/              # UI Views (Home, Nutrition, Workout, Settings, AI Chat)
-├── services/             # Core Logic & APIs
-│   ├── auth_service.dart      # Firebase Authentication
-│   ├── firestore_service.dart # Database operations & Gamification logic
-│   ├── food_service.dart      # Public food database API integration
+├── models/               # Data structures & logic
+│   ├── badge_model.dart         # Structure for earnable achievements and trophies
+│   ├── boss_model.dart          # Data for the weekly boss (HP, timer, difficulty)
+│   ├── gamification_rules.dart  # Constants for XP scaling and level thresholds
+│   ├── nutrition_model.dart     # Structure for logged meals and daily macros
+│   ├── reward_model.dart        # Data for shop items (cosmetics and custom treats)
+│   ├── task_model.dart          # Structure for daily and custom checklist items
+│   ├── user_model.dart          # Core user profile, stats, and database blueprint
+│   ├── user_progress.dart       # Tracking historical metrics and completion rates
+│   └── workout_model.dart       # Structure for logged exercises and routines
+│
+├── screens/              # Full-page UI Views
+│   ├── add_task_screen.dart       # Form to create new daily/custom tasks
+│   ├── ai_chat_screen.dart        # Interface for talking to Mo (AI Nutritionist)
+│   ├── create_account_screen.dart # Email/password registration UI
+│   ├── home_screen.dart           # Main dashboard (Boss, Calendar, Quick Actions)
+│   ├── login_screen.dart          # Authentication entry point
+│   ├── nutrition_screen.dart      # Meal logging, food search, and macro tracking
+│   ├── onboarding_screen.dart     # Initial clinical setup flow for new users
+│   ├── settings_screen.dart       # User preferences and dietary restrictions
+│   ├── shop_screen.dart           # Rewards store (Item Shop & Custom Rewards)
+│   ├── trophy_room_screen.dart    # Display for earned badges and lifetime stats
+│   └── workout_screen.dart        # Exercise logging interface
+│
+├── services/             # Core Backend Logic & APIs
 │   ├── ai_chat_service.dart   # Dual-layer AI integration (Gemini / gpt-oss-20b)
+│   ├── auth_service.dart      # Firebase Authentication logic
+│   ├── firestore_service.dart # Database operations & Gamification state
+│   ├── food_service.dart      # Public food database API integration
 │   └── pdf_service.dart       # Weekly report generation
 │
-└── main.dart             # App entry point and theme initialization
-🛠 Prerequisites & Requirements
+├── theme/                # Global app styling
+│   └── app_themes.dart        # Light/Dark mode and colour palettes
+│
+├── widgets/              # Reusable, modular UI components
+│   ├── boss_battle_card.dart  # Dynamic weekly boss UI
+│   ├── completion_chart.dart  # Analytics graph
+│   ├── progress_card.dart     # User level and XP bar
+│   ├── quote_widget.dart      # Daily motivational quote
+│   └── task_tile.dart         # Interactive checklist item
+│
+├── firebase_options.dart # Auto-generated Firebase configuration
+└── main.dart             # App entry point and initialization
+
+Prerequisites & Requirements
 To run this project locally, you will need the following installed on your machine:
 
-Flutter SDK: Version 3.19.0 or higher (Installation Guide)
+Flutter SDK: Version 3.19.0 or higher
 
 Dart SDK: Included with Flutter.
 
-IDE: VS Code, Android Studio, or Xcode (for iOS simulation).
+IDE: VS Code, Android Studio, or Xcode (for iOS compilation).
 
 Firebase Account: A free Firebase project with Authentication and Firestore enabled.
 
-⚙️ Environment Setup & Reproducibility
+Environment Setup & Reproducibility
 To protect sensitive API keys, this project uses the flutter_dotenv package. You must create your own environment file for the app to compile and run correctly.
 
-Clone the repository:
+1. Clone the repository:
 
 Bash
 git clone [https://github.com/yourusername/MotivaFit.git](https://github.com/yourusername/MotivaFit.git)
 cd MotivaFit
-Install dependencies:
+2. Install dependencies:
 
 Bash
 flutter pub get
-Create your Environment File:
-You must create a file named exactly .env in the root directory of the project (at the same level as pubspec.yaml). Open this file and paste in your own API keys. You must use these exact variable names:
+3. Create your Environment File:
+You must create a file named exactly .env in the root directory of the project (at the same level as pubspec.yaml). Open this file and paste in your own API keys using these exact variable names:
 
-Code snippet
+Plaintext
 GEMINI_API_KEY=your_google_gemini_key_here
 HUGGING_FACE_API_KEY=your_hugging_face_token_here
 SPOONACULAR_API_KEY=your_spoonacular_key_here
-Configure Firebase:
-This project requires a Firebase backend. Use the FlutterFire CLI to connect the app to your own Firebase project:
+4. Configure Firebase:
+This project requires a Firebase backend. Use the FlutterFire CLI to connect the app to your own Firebase project to lock-in the database connection:
 
 Bash
 dart pub global activate flutterfire_cli
 flutterfire configure
 
 How to Run the Code
-Once your .env file and Firebase configurations are locked in, you can run the app on an emulator or physical device.
+You can test MotivaFit on either a virtual emulator or a physical device. Note: The Barcode Scanner feature requires a physical device camera to function.
 
-To run on an iOS Simulator (Mac only):
+Option A: Running on Virtual Devices (Emulators/Simulators)
+This is the fastest method to verify the UI and core logic.
+
+Android Emulator: Open Android Studio, navigate to the Virtual Device Manager, and launch a virtual phone.
+
+iOS Simulator (Mac Only): Open your terminal and run open -a Simulator.
+
+Once the virtual device is running, execute:
 
 Bash
-open -a Simulator
 flutter run
-To run on an Android Emulator or physical device:
+Option B: Running on Physical Devices
+Testing on a physical device allows you to utilise hardware features like the Barcode Scanner. Ensure your phone is connected to your computer via a reliable cable (a good sign is that the phone begins charging).
 
-Bash
-flutter run
+For Android:
+
+Ensure "USB Debugging" is enabled in your phone's Developer Options.
+
+Run flutter run in your terminal.
+
+When prompted, select your physical device from the list. Keep the screen unlocked and wait a few minutes for the initial build and installation to complete.
+
+For iOS (Mac Only):
+⚠️ Apple enforces strict code-signing policies. You cannot simply run the code on an iPhone without prior setup.
+
+Open the ios/Runner.xcworkspace file in Xcode.
+
+Navigate to the "Signing & Capabilities" tab and assign your own Apple Developer ID to the Team setting.
+
+Once signed, run flutter run and select your iPhone.
+
+On your iPhone, navigate to Settings > General > VPN & Device Management and trust your developer certificate. You must also ensure Developer Mode is enabled in your Privacy & Security settings.
 
 Testing the Application
 Because MotivaFit relies heavily on real-time external APIs and Firebase backend services, the most effective way to test the codebase is through manual user-journey exploration.
 
-Once your dependencies are installed and the app is running, try the following flow to verify all systems are operational:
+Once the app is running, try the following flow to verify all systems are operational:
 
 Authentication: Create a new account to verify Firebase Auth is connected.
 
-Database & API: Go to the Nutrition tab and log a meal (using either the text search or the barcode scanner). This verifies the Spoonacular API is fetching data and Firestore is saving it.
+Database & API: Go to the Nutrition tab and log a meal.
 
-Gamification: Complete a daily task or finish a workout to ensure the XP bar increases and coins are awarded.
+Hardware Limitation Note: If testing on an emulator, the camera cannot scan barcodes. Please use the "Search Food Name" or "Enter Manually" buttons to verify the Spoonacular API and Firestore integrations.
 
-AI Architecture: Open the AI Assistant (Mo) and ask for a meal recommendation to verify the Hugging Face / Gemini fallback router is successfully generating responses.
+Gamification: Complete a daily task or finish a workout to ensure the XP bar increases and coins are awarded correctly.
 
-📊 APIs & Models Used
+AI Architecture: Open the AI Assistant (Mo) and ask for a meal recommendation to verify the Hugging Face / Gemini fallback router is successfully reading your current macros and generating an appropriate response.
+
+APIs & Models Used
 This application relies on live APIs and open-weight models to provide real-time data to the user:
 
 Food & Nutrition Database: Spoonacular Food API
@@ -94,5 +153,3 @@ Food & Nutrition Database: Spoonacular Food API
 Primary AI Assistant: Hugging Face Serverless Inference API (routing to openai/gpt-oss-20b)
 
 Fallback AI Assistant: Google Gemini API
-
-

@@ -10,9 +10,9 @@ import 'models/user_model.dart';
 import 'theme/app_themes.dart';
 import 'screens/login_screen.dart';
 import 'screens/home_screen.dart';
-import 'screens/onboarding_screen.dart'; 
+import 'screens/onboarding_screen.dart';
 
-// The ignition switch for the entire app. It ensures Flutter is ready, locks the screen so it doesn't rotate sideways, boots up Firebase, and loads our hidden API keys before finally running the UI.
+// The ignition switch for the entire app. It ensures Flutter is ready, locks the screen so it doesn't rotate sideways, boots up Firebase, and securely loads our hidden API keys before finally painting the UI on the screen.
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await SystemChrome.setPreferredOrientations([
@@ -26,57 +26,71 @@ void main() async {
   runApp(const MotivafitApp());
 }
 
-// The root widget of the app. By wrapping our MaterialApp in a StreamBuilder connected to the database, the split-second a user equips a new theme from the shop, this widget forces every single screen in the app to repaint instantly.
+// The root widget of the app. By wrapping our MaterialApp in an Auth Stream first, we ensure the app only connects to the database theme listener AFTER the user is fully logged in. This prevents the app from getting stuck on a blank default theme.
 class MotivafitApp extends StatelessWidget {
   const MotivafitApp({super.key});
 
   @override
   Widget build(BuildContext context) {
-    return StreamBuilder<UserModel>(
-      stream: FirestoreService().getUserStream(),
-      builder: (context, snapshot) {
-        String activeThemeId = 'default';
+    return StreamBuilder<User?>(
+      stream: FirebaseAuth.instance.authStateChanges(),
+      builder: (context, authSnapshot) {
+        final user = authSnapshot.data;
 
-        // If the user is logged in and their profile loads, grab their chosen theme
-        if (snapshot.hasData) {
-          activeThemeId = snapshot.data!.selectedThemeId;
+        // If no one is logged in yet (or the app is just booting up), we safely fall back to the default MotivaFit light theme for the login screens.
+        if (user == null) {
+          return MaterialApp(
+            title: 'Motivafit',
+            debugShowCheckedModeBanner: false,
+            theme: AppThemes.getTheme('default'),
+            home: const AuthWrapper(),
+          );
         }
 
-        ThemeData appTheme;
-        ThemeData appDarkTheme;
-        ThemeMode currentThemeMode;
+        // Once they are logged in, we tap directly into their personal database profile. 
+        // This StreamBuilder forces the entire app to instantly repaint the split-second they buy a new theme from the shop or toggle dark mode in settings.
+        return StreamBuilder<UserModel>(
+          stream: FirestoreService().getUserStream(),
+          builder: (context, snapshot) {
+            String activeThemeId = 'default';
 
-        // Logic to gracefully handle the standard Apple/Android system settings, manual light/dark toggles, OR completely custom shop themes.
-        if (activeThemeId == 'default' || activeThemeId == 'system') {
-          appTheme = AppThemes.getTheme('default');
-          appDarkTheme = AppThemes.getTheme('theme_dark');
-          currentThemeMode = ThemeMode.system;
-        } 
-        else if (activeThemeId == 'theme_light') {
-          appTheme = AppThemes.getTheme('default');
-          appDarkTheme = AppThemes.getTheme('default'); 
-          currentThemeMode = ThemeMode.light;
-        } 
-        else if (activeThemeId == 'theme_dark') {
-          appTheme = AppThemes.getTheme('theme_dark');
-          appDarkTheme = AppThemes.getTheme('theme_dark');
-          currentThemeMode = ThemeMode.dark;
-        } 
-        else {
-          // If they have a custom shop theme equipped, we force both light and dark to use the custom colors so their phone settings don't override their purchase.
-          appTheme = AppThemes.getTheme(activeThemeId);
-          appDarkTheme = AppThemes.getTheme(activeThemeId);
-          currentThemeMode = ThemeMode.light; 
-        }
+            if (snapshot.hasData) {
+              activeThemeId = snapshot.data!.selectedThemeId;
+            }
 
-        return MaterialApp(
-          title: 'Motivafit',
-          debugShowCheckedModeBanner: false,
-          theme: appTheme,
-          darkTheme: appDarkTheme,
-          themeMode: currentThemeMode,
-          // Instead of a hardcoded starting screen, we hand control to the Traffic Cop
-          home: const AuthWrapper(),
+            ThemeData appTheme;
+            ThemeData appDarkTheme;
+            ThemeMode currentThemeMode;
+
+            // This logic gracefully handles the standard Apple/Android system settings, manual light/dark toggles, and completely custom shop themes.
+            if (activeThemeId == 'default' || activeThemeId == 'system') {
+              appTheme = AppThemes.getTheme('default');
+              appDarkTheme = AppThemes.getTheme('theme_dark');
+              currentThemeMode = ThemeMode.system;
+            } else if (activeThemeId == 'theme_light') {
+              appTheme = AppThemes.getTheme('default');
+              appDarkTheme = AppThemes.getTheme('default');
+              currentThemeMode = ThemeMode.light;
+            } else if (activeThemeId == 'theme_dark') {
+              appTheme = AppThemes.getTheme('theme_dark');
+              appDarkTheme = AppThemes.getTheme('theme_dark');
+              currentThemeMode = ThemeMode.dark;
+            } else {
+              // If they have a custom shop theme equipped, we force both light and dark modes to use the custom colors so their phone's native settings don't override their purchase.
+              appTheme = AppThemes.getTheme(activeThemeId);
+              appDarkTheme = AppThemes.getTheme(activeThemeId);
+              currentThemeMode = ThemeMode.light;
+            }
+
+            return MaterialApp(
+              title: 'Motivafit',
+              debugShowCheckedModeBanner: false,
+              theme: appTheme,
+              darkTheme: appDarkTheme,
+              themeMode: currentThemeMode,
+              home: const AuthWrapper(),
+            );
+          },
         );
       },
     );
@@ -93,6 +107,7 @@ class AuthWrapper extends StatelessWidget {
     return StreamBuilder<User?>(
       stream: FirebaseAuth.instance.authStateChanges(),
       builder: (context, authSnapshot) {
+        
         // Still checking Firebase to see if they are logged in...
         if (authSnapshot.connectionState == ConnectionState.waiting) {
           return const Scaffold(body: Center(child: CircularProgressIndicator()));
@@ -100,7 +115,7 @@ class AuthWrapper extends StatelessWidget {
 
         final user = authSnapshot.data;
 
-        // If they have a valid login session
+        // If they have a valid login session, we need to make sure they actually finished setting up their profile metrics before letting them into the app.
         if (user != null) {
           return FutureBuilder<DocumentSnapshot>(
             future: FirebaseFirestore.instance.collection('users').doc(user.uid).get(),
@@ -109,11 +124,11 @@ class AuthWrapper extends StatelessWidget {
                 return const Scaffold(body: Center(child: CircularProgressIndicator()));
               }
 
-              // and they have finished creating their profile, send them Home.
+              // If their database profile exists, send them straight to the Home dashboard.
               if (docSnapshot.hasData && docSnapshot.data!.exists) {
                 return const HomeScreen();
               } else {
-                // but if their database profile doesn't exist yet, force them to Onboarding.
+                // But if their database profile doesn't exist yet, force them through the Onboarding flow.
                 return const OnboardingScreen();
               }
             },

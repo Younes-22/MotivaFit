@@ -10,15 +10,19 @@ class AIChatService {
   Future<String> getMealSuggestion({
     required UserModel user,
     required NutritionDay todayNutrition,
-    required List<Map<String, String>> chatHistory, // NOW ACCEPTS FULL HISTORY
+    required List<Map<String, String>> chatHistory,
   }) async {
     
     int remainingCals = user.calorieGoal - todayNutrition.calories;
+    int remainingProtein = user.proteinGoal - todayNutrition.protein;
+    int remainingCarbs = user.carbsGoal - todayNutrition.carbs;
+    int remainingFat = user.fatGoal - todayNutrition.fat;
+    
     String dietText = user.dietaryRestrictions.isEmpty 
         ? 'None' 
         : user.dietaryRestrictions.join(', ');
 
-    // The Master System Prompt (Removed the userQuery from the bottom, as it's now in the history)
+    // The System Prompt
     final String systemPrompt = """
 You are Mo, the professional and friendly AI Nutritionist for the 'MotivaFit' app.
 
@@ -30,11 +34,13 @@ USER CONTEXT:
 - User Name: ${user.username}
 - Dietary Requirements: $dietText
 - Remaining Daily Calories: $remainingCals kcal
+- Remaining Macros: $remainingProtein g Protein, $remainingCarbs g Carbs, $remainingFat g Fat
+  *(Note: If any remaining calorie or macro values are negative, it means the user has gone OVER their limit for that specific nutrient today. Adjust your advice accordingly).*
 
 STRICT GUIDELINES:
 1. Always stay in character as 'Mo'.
 2. MANDATORY: You must strictly adhere to the 'Dietary Requirements'. For example, if 'Halal' or 'Vegan' is listed, never suggest violating it. 
-3. Ensure any meal suggestions mathematically fit within the $remainingCals kcal remaining limit.
+3. Ensure any meal suggestions mathematically fit within the remaining calories and macros provided above.
 4. Keep your response concise, using line breaks or emojis for quick readability.
 5. CONVERSATIONAL FLOW & QUESTIONS:
    - GREETINGS: If the user simply says "hi" or "hello," warmly greet them back and ask how you can help them with their nutrition today.
@@ -43,7 +49,7 @@ STRICT GUIDELINES:
 """;
 
     try {
-      // 1. Primary API: Hugging Face with full conversational memory
+      // Primary API: Hugging Face with full conversational memory
       return await _callHuggingFace(systemPrompt, chatHistory);
       
     } catch (e) {
@@ -51,7 +57,7 @@ STRICT GUIDELINES:
       print("HF ERROR: $e");
       
       try {
-        // 2. Backup API: Gemini with full conversational memory
+        // Backup API: Gemini
         return await _callGemini(systemPrompt, chatHistory, user.username);
         
       } catch (backupError) {
@@ -61,7 +67,7 @@ STRICT GUIDELINES:
     }
   }
 
-  // --- PRIMARY API: Hugging Face (OpenAI gpt-oss-20b) ---
+  // PRIMARY API: Hugging Face (OpenAI gpt-oss-20b)
   Future<String> _callHuggingFace(String systemPrompt, List<Map<String, String>> chatHistory) async {
     final apiKey = dotenv.env['HUGGING_FACE_API_KEY'];
     if (apiKey == null) throw Exception("Hugging Face API key missing");
@@ -103,7 +109,7 @@ STRICT GUIDELINES:
     }
   }
 
-  // --- BACKUP API: Google Gemini ---
+  // BACKUP API: Google Gemini
   Future<String> _callGemini(String systemPrompt, List<Map<String, String>> chatHistory, String username) async {
     final apiKey = dotenv.env['GEMINI_API_KEY'];
     if (apiKey == null) throw Exception("Gemini API key missing");

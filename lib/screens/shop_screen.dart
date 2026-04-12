@@ -68,7 +68,6 @@ class _ShopScreenState extends State<ShopScreen> {
       context: context,
       builder: (ctx) => AlertDialog(
         title: const Text('New Custom Reward'),
-        // FIX: Wrapped in SingleChildScrollView to survive the keyboard sliding up
         content: SingleChildScrollView(
           child: Column(
             mainAxisSize: MainAxisSize.min,
@@ -161,7 +160,6 @@ class _ShopScreenState extends State<ShopScreen> {
   }
 
   // The custom rewards tab. It fetches the user's personal treats and disables the "Redeem" button if their bank balance is too low.
-  // The custom rewards tab. It fetches the user's personal treats and disables the "Redeem" button if their bank balance is too low.
   Widget _buildMyRewardsTab(UserModel user) {
     return Scaffold(
       floatingActionButton: FloatingActionButton.extended(
@@ -200,7 +198,6 @@ class _ShopScreenState extends State<ShopScreen> {
                           crossAxisAlignment: CrossAxisAlignment.start,
                           mainAxisSize: MainAxisSize.min,
                           children: [
-                            // FIX: FittedBox forces the text to shrink-to-fit instead of breaking mid-word!
                             FittedBox(
                               fit: BoxFit.scaleDown,
                               alignment: Alignment.centerLeft,

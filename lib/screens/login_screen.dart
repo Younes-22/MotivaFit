@@ -138,7 +138,7 @@ class _LoginScreenState extends State<LoginScreen> {
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
                 
-                // AI CITATION: The concept of using the Material 'fire' icon as the app's motivational logo, along with the spacing and structure of this form, was suggested by AI.
+                // fire icon
                 Icon(
                   Icons.local_fire_department_rounded, 
                   size: 80,

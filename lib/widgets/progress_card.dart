@@ -1,8 +1,7 @@
 import 'package:flutter/material.dart';
 
 // A visual scoreboard that sits at the top of the home screen.
-// It displays the user's current level, progress to the next level,
-// and their total coin balance.
+// It displays the user's current level, progress to the next level and their total coin balance.
 class ProgressCard extends StatelessWidget {
   final int level;
   final int currentXP;
@@ -24,21 +23,21 @@ class ProgressCard extends StatelessWidget {
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
 
-    // --- Avatar Visual Logic ---
+    // Avatar Visual Logic
     // Maps the string ID saved in the database to a specific Flutter icon and color.
     IconData avatarIcon;
     Color avatarColor;
 
     switch (selectedAvatarId) {
-      case 'avatar_novice': 
+      case 'avatar_green_novice': 
         avatarIcon = Icons.face;
         avatarColor = Colors.greenAccent; 
         break;
-      case 'avatar_blue':
+      case 'avatar_blue_warrior':
         avatarIcon = Icons.shield;
         avatarColor = Colors.blue; 
         break;
-      case 'avatar_fire': 
+      case 'avatar_crimson_firebender': 
         avatarIcon = Icons.local_fire_department;
         avatarColor = Colors.orange;
         break;
@@ -81,7 +80,7 @@ class ProgressCard extends StatelessWidget {
                 Expanded(
                   child: Row(
                     children: [
-                      // --- Avatar Circle ---
+                      // Avatar Circle
                       CircleAvatar(
                         radius: 24,
                         backgroundColor: Colors.black26, 
@@ -89,7 +88,7 @@ class ProgressCard extends StatelessWidget {
                       ),
                       const SizedBox(width: 12),
                       
-                      // --- Level Info ---
+                      // Level Info
                       // Wrapped in Expanded so long level text shrinks instead of pushing the coins off screen
                       Expanded(
                         child: Column(
