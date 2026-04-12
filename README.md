@@ -74,7 +74,7 @@ To protect sensitive API keys, this project uses the flutter_dotenv package. You
 1. Clone the repository:
 
 Bash
-git clone [https://github.com/yourusername/MotivaFit.git](https://github.com/yourusername/MotivaFit.git)
+git clone https://github.com/Younes-22/MotivaFit.git
 cd MotivaFit
 2. Install dependencies:
 
@@ -153,3 +153,28 @@ Food & Nutrition Database: Spoonacular Food API
 Primary AI Assistant: Hugging Face Serverless Inference API (routing to openai/gpt-oss-20b)
 
 Fallback AI Assistant: Google Gemini API
+
+
+### 🔑 How to Obtain API Keys (Free Tier)
+If you are evaluating this project and do not already have developer keys for these services, you can lock-in free-tier access by following these steps. All three services offer generous free tiers that do not require credit card details.
+I'm open to providing my API keys upon request if necessary
+
+**1. Google Gemini API**
+* Navigate to [Google AI Studio](https://aistudio.google.com/).
+* Sign in with any standard Google account.
+* Click **"Get API key"** in the left-hand navigation menu.
+* Click **"Create API key"** and copy the generated string.
+
+**2. Hugging Face API**
+* Navigate to [Hugging Face](https://huggingface.co/) and create a free account.
+* Go to your profile settings by clicking your avatar in the top right corner.
+* Select **"Access Tokens"** from the left-hand menu.
+* Click **"Create new token"**, name it "MotivaFit", set the role to **"Read"**, and copy the token.
+
+**3. Spoonacular Food API**
+* Navigate to the [Spoonacular API Console](https://spoonacular.com/food-api).
+* Create a free account.
+* Go to **Profile & API Key**.
+* Your API Key will be visible on the main screen. *(Note: The free tier is limited to 150 points per day, which is more than enough for standard manual testing of the search and barcode features).*
+
+Once you have all three keys, paste them into your `.env` file exactly as formatted above to lock-in the app's full functionality.
