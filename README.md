@@ -1,6 +1,6 @@
 # MotivaFit
 
-The full version of this project is also available at: https://cityuni-my.sharepoint.com/:f:/g/personal/younes_bekhti_city_ac_uk/IgB7AF9csz9bSIQ_nTFTZhRKAd201hU_ShtOzem-_fw76q4?e=gHnmlK
+The full version of this project is also available at: [MotivaFit Source Code](https://cityuni-my.sharepoint.com/:f:/g/personal/younes_bekhti_city_ac_uk/IgB7AF9csz9bSIQ_nTFTZhRKAd201hU_ShtOzem-_fw76q4?e=gHnmlK)
 
 MotivaFit is a gamified Flutter application designed to make health and fitness tracking engaging. By combining daily nutrition logging and workout tracking with RPG-style elements (XP, Coins, and weekly Boss Battles), MotivaFit keeps users consistent and motivated. It also features a built-in AI Nutritionist powered by a dual-model fallback architecture to ensure maximum uptime and reliability.
 
@@ -56,11 +56,11 @@ lib/
 │
 ├── firebase_options.dart # Auto-generated Firebase configuration
 └── main.dart             # App entry point and initialization
-.gitignore                # Specifies files intentionally untracked by Git (like .env)
-pubspec.yaml              # Flutter package manager, dependencies, and app configuration
-README.md                 # Project documentation and setup guide
-
-Prerequisites & Requirements
+│
+├── .gitignore            # Specifies files intentionally untracked by Git (like .env)
+├── pubspec.yaml          # Flutter package manager, dependencies, and app configuration
+└── README.md             # Project documentation and setup guide
+🛠 Prerequisites & Requirements
 To run this project locally, you will need the following installed on your machine:
 
 Flutter SDK: Version 3.19.0 or higher
@@ -68,21 +68,19 @@ Flutter SDK: Version 3.19.0 or higher
 Dart SDK: Included with Flutter.
 
 IDE: VS Code, Android Studio, or Xcode (for iOS compilation).
+(Note: A personal Firebase account is not required. The app is pre-configured to connect to the official MotivaFit database for grading purposes).
 
-Firebase Account: A free Firebase project with Authentication and Firestore enabled.
-
-Environment Setup & Reproducibility
+⚙️ Environment Setup & Reproducibility
 To protect sensitive API keys, this project uses the flutter_dotenv package. You must create your own environment file for the app to compile and run correctly.
 
 1. Clone the repository:
 
 Bash
-git clone https://github.com/Younes-22/MotivaFit.git
+git clone [https://github.com/Younes-22/MotivaFit.git](https://github.com/Younes-22/MotivaFit.git)
+Note: The GitHub repository is currently set as private to protect academic integrity. Access can be granted upon request, or you may access the source code directly via the provided SharePoint folder link above.
 
-The repository is currently set as private. Access can be given upon request. Alternatively the project can be accessed through the shared folder.
-
+Bash
 cd MotivaFit
-
 2. Install dependencies:
 
 Bash
@@ -94,14 +92,7 @@ Plaintext
 GEMINI_API_KEY=your_google_gemini_key_here
 HUGGING_FACE_API_KEY=your_hugging_face_token_here
 SPOONACULAR_API_KEY=your_spoonacular_key_here
-4. Configure Firebase:
-This project requires a Firebase backend. Use the FlutterFire CLI to connect the app to your own Firebase project to lock-in the database connection:
-
-Bash
-dart pub global activate flutterfire_cli
-flutterfire configure
-
-How to Run the Code
+🚀 How to Run the Code
 You can test MotivaFit on either a virtual emulator or a physical device. Note: The Barcode Scanner feature requires a physical device camera to function.
 
 Option A: Running on Virtual Devices (Emulators/Simulators)
@@ -137,7 +128,7 @@ Once signed, run flutter run and select your iPhone.
 
 On your iPhone, navigate to Settings > General > VPN & Device Management and trust your developer certificate. You must also ensure Developer Mode is enabled in your Privacy & Security settings.
 
-Testing the Application
+🧪 Testing the Application
 Because MotivaFit relies heavily on real-time external APIs and Firebase backend services, the most effective way to test the codebase is through manual user-journey exploration.
 
 Once the app is running, try the following flow to verify all systems are operational:
@@ -152,7 +143,7 @@ Gamification: Complete a daily task or finish a workout to ensure the XP bar inc
 
 AI Architecture: Open the AI Assistant (Mo) and ask for a meal recommendation to verify the Hugging Face / Gemini fallback router is successfully reading your current macros and generating an appropriate response.
 
-APIs & Models Used
+📡 APIs & Models Used
 This application relies on live APIs and open-weight models to provide real-time data to the user:
 
 Food & Nutrition Database: Spoonacular Food API
@@ -161,27 +152,37 @@ Primary AI Assistant: Hugging Face Serverless Inference API (routing to openai/g
 
 Fallback AI Assistant: Google Gemini API
 
+🔑 How to Obtain API Keys (Free Tier)
+If you are evaluating this project and do not already have developer keys for these services, you can lock-in free-tier access by following these steps. All three services offer generous free tiers that do not require credit card details. (I am also happy to provide my personal testing keys via email upon request if required for grading).
 
-How to Obtain API Keys (Free Tier)
-If you are evaluating this project and do not already have developer keys for these services, you can lock-in free-tier access by following these steps. All three services offer generous free tiers that do not require credit card details.
-I'm open to providing my API keys upon request if necessary
+1. Google Gemini API
 
-1. Google Gemini API**
-Navigate to [Google AI Studio](https://aistudio.google.com/).
+Navigate to Google AI Studio.
+
 Sign in with any standard Google account.
-Click **"Get API key"** in the left-hand navigation menu.
-Click **"Create API key"** and copy the generated string.
 
-2. Hugging Face API**
-Navigate to [Hugging Face](https://huggingface.co/) and create a free account.
+Click "Get API key" in the left-hand navigation menu.
+
+Click "Create API key" and copy the generated string.
+
+2. Hugging Face API
+
+Navigate to Hugging Face and create a free account.
+
 Go to your profile settings by clicking your avatar in the top right corner.
-Select **"Access Tokens"** from the left-hand menu.
-Click **"Create new token"**, name it "MotivaFit", set the role to **"Read"**, and copy the token.
 
-3. Spoonacular Food API**
-Navigate to the [Spoonacular API Console](https://spoonacular.com/food-api).
+Select "Access Tokens" from the left-hand menu.
+
+Click "Create new token", name it "MotivaFit", set the role to "Read", and copy the token.
+
+3. Spoonacular Food API
+
+Navigate to the Spoonacular API Console.
+
 Create a free account.
-Go to **Profile & API Key**.
-Your API Key will be visible on the main screen. *(Note: The free tier is limited to 150 points per day, which is more than enough for standard manual testing of the search and barcode features).*
+
+Go to Profile & API Key.
+
+Your API Key will be visible on the main screen. (Note: The free tier is limited to 150 points per day, which is more than enough for standard manual testing of the search and barcode features).
 
 Once you have all three keys, paste them into your `.env` file exactly as formatted above to lock-in the app's full functionality.
