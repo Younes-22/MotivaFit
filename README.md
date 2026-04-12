@@ -70,7 +70,7 @@ Dart SDK: Included with Flutter.
 IDE: VS Code, Android Studio, or Xcode (for iOS compilation).
 (Note: A personal Firebase account is not required. The app is pre-configured to connect to the official MotivaFit database for grading purposes).
 
-⚙️ Environment Setup & Reproducibility
+Environment Setup & Reproducibility
 To protect sensitive API keys, this project uses the flutter_dotenv package. You must create your own environment file for the app to compile and run correctly.
 
 1. Clone the repository:
@@ -92,7 +92,8 @@ Plaintext
 GEMINI_API_KEY=your_google_gemini_key_here
 HUGGING_FACE_API_KEY=your_hugging_face_token_here
 SPOONACULAR_API_KEY=your_spoonacular_key_here
-🚀 How to Run the Code
+
+How to Run the Code
 You can test MotivaFit on either a virtual emulator or a physical device. Note: The Barcode Scanner feature requires a physical device camera to function.
 
 Option A: Running on Virtual Devices (Emulators/Simulators)
@@ -118,7 +119,7 @@ Run flutter run in your terminal.
 When prompted, select your physical device from the list. Keep the screen unlocked and wait a few minutes for the initial build and installation to complete.
 
 For iOS (Mac Only):
-⚠️ Apple enforces strict code-signing policies. You cannot simply run the code on an iPhone without prior setup.
+Apple enforces strict code-signing policies. You cannot simply run the code on an iPhone without prior setup.
 
 Open the ios/Runner.xcworkspace file in Xcode.
 
@@ -128,7 +129,7 @@ Once signed, run flutter run and select your iPhone.
 
 On your iPhone, navigate to Settings > General > VPN & Device Management and trust your developer certificate. You must also ensure Developer Mode is enabled in your Privacy & Security settings.
 
-🧪 Testing the Application
+Testing the Application
 Because MotivaFit relies heavily on real-time external APIs and Firebase backend services, the most effective way to test the codebase is through manual user-journey exploration.
 
 Once the app is running, try the following flow to verify all systems are operational:
@@ -143,7 +144,7 @@ Gamification: Complete a daily task or finish a workout to ensure the XP bar inc
 
 AI Architecture: Open the AI Assistant (Mo) and ask for a meal recommendation to verify the Hugging Face / Gemini fallback router is successfully reading your current macros and generating an appropriate response.
 
-📡 APIs & Models Used
+APIs & Models Used
 This application relies on live APIs and open-weight models to provide real-time data to the user:
 
 Food & Nutrition Database: Spoonacular Food API
@@ -152,7 +153,7 @@ Primary AI Assistant: Hugging Face Serverless Inference API (routing to openai/g
 
 Fallback AI Assistant: Google Gemini API
 
-🔑 How to Obtain API Keys (Free Tier)
+How to Obtain API Keys (Free Tier)
 If you are evaluating this project and do not already have developer keys for these services, you can lock-in free-tier access by following these steps. All three services offer generous free tiers that do not require credit card details. (I am also happy to provide my personal testing keys via email upon request if required for grading).
 
 1. Google Gemini API
