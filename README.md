@@ -56,6 +56,9 @@ lib/
 │
 ├── firebase_options.dart # Auto-generated Firebase configuration
 └── main.dart             # App entry point and initialization
+.gitignore                # Specifies files intentionally untracked by Git (like .env)
+pubspec.yaml              # Flutter package manager, dependencies, and app configuration
+README.md                 # Project documentation and setup guide
 
 Prerequisites & Requirements
 To run this project locally, you will need the following installed on your machine:
