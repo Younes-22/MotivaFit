@@ -23,8 +23,6 @@ class _SettingsScreenState extends State<SettingsScreen> {
     'Gluten-Free', 'Dairy-Free', 'Keto', 'No Nuts',
   ];
 
-  final List<String> _goals = ['Lose Weight', 'Maintain', 'Build Muscle'];
-
   // Completely clears the current user's active session and safely kicks them all the way back to the main Login/Sign Up screen.
   void _handleLogout() {
     AuthService().signOut();
